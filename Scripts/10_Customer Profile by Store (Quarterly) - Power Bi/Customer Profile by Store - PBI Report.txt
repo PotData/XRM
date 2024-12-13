@@ -1,0 +1,1247 @@
+/*Customer Profile by Store - Report on Power BI*/
+
+
+options dlcreatedir;
+libname BI 'G:\Ton\PowerBI_Customer_Profile_24Q3_v2';
+
+
+libname BI2 'G:\Ton\PowerBI_Customer_Profile_23Q4';
+
+
+/*Map Sales*/
+/*by Store Code*/
+/*Month 7-9*/
+%MACRO EXECUTE_SALE_TRANS(yyyymm);
+          PROC SQL threads;
+		  CREATE TABLE BI.store_m_&yyyymm (compress = yes) AS
+          SELECT distinct &yyyymm as period, store_id as st_code, store_name, 
+				case when store_format in ("TOPS MARKET", "Super Store A-P") then "TOPS MARKET" else store_format end as store_format2, 
+				store_location, sbl_member_id, 
+				count(distinct Ref_key) as tx, 
+				sum(qty) as quant, 
+                sum(total) as total, 
+				sum(net_total) as net_total,
+                sum(GP) as gp
+          FROM Topst1c.sales_promotion_comp_&yyyymm as a
+		  join topsrst.d_store as b
+		  on a.store_id = b.store_code
+		  where store_format in ("Central Food Hall", "TOPS MARKET", "TOPS DAILY", "Super Store A-P", "TOPS Fine Food", "TOPS CLUB")
+		  				and sbl_member_id not in ('9-014342304', '9-014223414',  '9-014511211', '9-014493473', '9-014234126', '9-014651449', '9999999999')
+		  				and sbl_member_id is not null
+		  group by period, st_code, store_name, store_format2, store_location, sbl_member_id
+          ;
+          QUIT;
+%MEND;
+
+OPTIONS mprint;
+%EXECUTE_SALE_TRANS(202407)
+%EXECUTE_SALE_TRANS(202408)
+%EXECUTE_SALE_TRANS(202409)
+;
+
+
+
+%MACRO EXECUTE_SALE_TRANS(yyyymm);
+          PROC SQL threads;
+		  CREATE TABLE BI.storecfm_m_&yyyymm (compress = yes) AS
+          SELECT distinct &yyyymm as period, '' as st_code, store_name, 
+				'CFM' as store_format2, 
+				store_location, sbl_member_id, 
+				count(distinct Ref_key) as tx, 
+				sum(qty) as quant, 
+                sum(total) as total, 
+				sum(net_total) as net_total,
+                sum(GP) as gp
+          FROM Topst1c.CFM_sales_promotion_comp_&yyyymm as a
+		  join Topscfm.STORE_MASTER as b
+		  on a.store_id = b.store_code
+		  where sbl_member_id not in ('9-014342304', '9-014223414',  '9-014511211', '9-014493473', '9-014234126', '9-014651449', '9999999999')
+		  				and sbl_member_id is not null
+		  group by period, st_code, store_name, store_format2, store_location, sbl_member_id
+          ;
+          QUIT;
+%MEND;
+
+OPTIONS mprint;
+%EXECUTE_SALE_TRANS(202407)
+%EXECUTE_SALE_TRANS(202408)
+%EXECUTE_SALE_TRANS(202409)
+;
+
+
+
+
+
+data BI.sale_m;
+set BI.store_m_202407
+BI.store_m_202408
+BI.store_m_202409
+BI.storecfm_m_202407
+BI.storecfm_m_202408
+BI.storecfm_m_202409
+;
+run;
+
+
+/*table summary*/
+/*by store*/
+proc sql;
+	create table BI.sale_m_period_storecode as
+	select distinct period, st_code, store_format2, store_name, store_location,
+				count(distinct sbl_member_id) as tc,
+				sum(tx) as tx, 
+				sum(quant) as quant, 
+				sum(total)as total, 
+				sum(GP) as gp, 
+				sum(net_total) as net_total,
+				sum(total)/count(distinct sbl_member_id) as spending_head_month,
+				sum(total)/sum(tx) as basket_size,
+				sum(tx)/count(distinct sbl_member_id) as freq
+	from BI.sale_m
+	group by period, st_code, store_format2, store_name, store_location
+	;
+quit;
+
+proc sql;
+	create table BI.sale_m_storecode_sum1 as
+	select distinct st_code, store_format2, store_name, store_location,
+				count(distinct sbl_member_id) as tc,
+				sum(tx) as tx, 
+				sum(quant) as quant, 
+				sum(total)as total, 
+				sum(GP) as gp, 
+				sum(net_total) as net_total
+	from BI.sale_m
+	group by st_code, store_format2, store_name, store_location
+	;
+quit;
+
+proc sql;
+	create table BI.sale_m_storecode_sum2 as
+	select distinct st_code, store_format2, store_name, store_location,
+				avg(freq) as freq,
+				avg(spending_head_month) as spending_head_month,
+				avg(basket_size) as basket_size
+	from BI.sale_m_period_storecode
+	group by st_code, store_format2, store_name, store_location
+	;
+quit;
+
+data BI.sale_m_storecode_sum;
+merge BI.sale_m_storecode_sum1 BI.sale_m_storecode_sum2;
+by st_code store_format2 store_name store_location;
+run;
+
+/*by store format & location*/
+proc sql;
+	create table BI.sale_m_period_storeformat as
+	select distinct period, store_format2, catt("_", store_format2) as store_name, store_location,
+				count(distinct sbl_member_id) as tc,
+				sum(tx) as tx, 
+				sum(quant) as quant, 
+				sum(total)as total, 
+				sum(GP) as gp, 
+				sum(net_total) as net_total,
+				sum(total)/count(distinct sbl_member_id) as spending_head_month,
+				sum(total)/sum(tx) as basket_size,
+				sum(tx)/count(distinct sbl_member_id) as freq
+	from BI.sale_m
+	group by period, store_format2, catt("_", store_format2), store_location
+	;
+quit;
+
+proc sql;
+	create table BI.sale_m_storeformat_sum1 as
+	select distinct store_format2, catt("_", store_format2) as store_name, store_location,
+				count(distinct sbl_member_id) as tc,
+				sum(tx) as tx, 
+				sum(quant) as quant, 
+				sum(total)as total, 
+				sum(GP) as gp, 
+				sum(net_total) as net_total
+	from BI.sale_m
+	group by store_format2, catt("_", store_format2), store_location
+	;
+quit;
+
+proc sql;
+	create table BI.sale_m_storeformat_sum2 as
+	select distinct store_format2, store_name, store_location,
+				avg(freq) as freq,
+				avg(spending_head_month) as spending_head_month,
+				avg(basket_size) as basket_size
+	from BI.sale_m_period_storeformat
+	group by store_format2, store_name, store_location
+	;
+quit;
+
+data BI.sale_m_storeformat_sum;
+merge BI.sale_m_storeformat_sum1 BI.sale_m_storeformat_sum2;
+by store_format2 store_name store_location;
+run;
+
+/*combine*/
+data BI.sale_m_summary;
+set BI.sale_m_storecode_sum
+BI.sale_m_storeformat_sum
+;
+run;
+
+/*export .txt file*/
+PROC EXPORT DATA= BI.SALE_M_SUMMARY
+            OUTFILE= "\\cfhqsaspwbi02\PBI\Customer Profile_Quarter_PBI\24Q3_v2\SALE_M_SUMMARY.txt" 
+            DBMS=DLM REPLACE;
+     DELIMITER='7C'x; 
+     PUTNAMES=YES;
+RUN;
+
+
+
+
+/*mapping Profile*/
+proc sql;
+	create table BI.storecode_sbl as
+	select distinct st_code, store_format2, store_name, store_location, sbl_member_id
+	from BI.sale_m
+	;
+quit;
+
+/*CFH*/
+proc sql;
+	create table BI.storecode_sbl_cfh as
+	select distinct st_code, store_format2, store_name, store_location, a.sbl_member_id, olympic_segment
+	from BI.storecode_sbl as a
+	left join topscrm.OLYMPIC_CFG_BY_BANNER as b /*edit olympic*/
+	on a.sbl_member_id = b.sbl_member_Id
+	where store_format2 = "Central Food Hall"
+	and b.data_period in ('24Q3')
+	and b.store_format in ('Central Food Hall')
+	;
+quit;
+
+
+proc sql threads;
+     create table BI.storecode_sbl_cfh_p (compress=yes) as
+           select distinct st_code, store_format2, store_name, store_location, a.sbl_member_id,
+
+		   case when olympic_segment = "Diamond" then "01_Diamond"
+		   			when olympic_segment = "Platinum" then "02_Platinum"
+					when olympic_segment = "Gold" then "03_Gold"
+					when olympic_segment = "Silver" then "04_Silver"
+					when olympic_segment = "Bronze" then "05_Bronze"
+					else "99_Other"
+		   		end as olympic_segment, 
+
+			MARITALSTATUS   as MARITAL_STATUS,
+
+			age,
+
+           case 
+                when age is null Then '99_Unknown'
+                when (age >= 0 and age <18) then  '00_<18'
+                when age <25 then  '01_18-24'
+                else Age_Range 
+           end as Age_Range,
+
+           case
+                when Gender = 'F' then '01_Female'
+                when Gender = 'M' then '02_Male'
+                else '99_Other' 
+           end as Gender,
+
+           case when Education_Level = "Primary School" then "01_Primary School"
+					when Education_Level = "Secondary School" then "02_Secondary School"
+					when Education_Level = "College" then "03_College"
+					when Education_Level = "Bachelor Degree" then "04_Bachelor Degree"
+					when Education_Level = "Master Degree" then "05_Master Degree"
+					when Education_Level = "Doctorate" then "06_Doctorate"
+				else "99_Other"
+				end as Education_Level,
+
+           HH_Income as MTHLY_INCOME,
+
+           put(SEGMENT_no_gp_e,2.)!!'_'!!segment_gp_e as segment,
+
+           case when CFR_COMPANY_RANK = "TOP 1%" then "01_TOP 1%"
+					when CFR_COMPANY_RANK = "TOP 2-10%" then "02_TOP 2-10%"
+					when CFR_COMPANY_RANK = "TOP 11-20%" then "03_TOP 11-20%"
+					when CFR_COMPANY_RANK = "TOP 21-40%" then "04_TOP 21-40%"
+					when CFR_COMPANY_RANK = "TOP 41-60%" then "05_TOP 41-60%"
+					when CFR_COMPANY_RANK = "TOP 61-80%" then "06_TOP 61-80%"
+					when CFR_COMPANY_RANK = "Bottom 20%" then "07_Bottom 20%"
+					when CFR_COMPANY_RANK = "Wholesale" then "08_Wholesale"
+				else "99_Other"
+				end as CFR_COMPANY_RANK,
+
+           case when CFG_Rank = "TOP 1%" then "01_TOP 1%"
+					when CFG_Rank = "TOP 2-10%" then "02_TOP 2-10%"
+					when CFG_Rank = "TOP 11-20%" then "03_TOP 11-20%"
+					when CFG_Rank = "TOP 21-40%" then "04_TOP 21-40%"
+					when CFG_Rank = "TOP 41-60%" then "05_TOP 41-60%"
+					when CFG_Rank = "TOP 61-80%" then "06_TOP 61-80%"
+					when CFG_Rank = "Bottom 20%" then "07_Bottom 20%"
+				else "99_Other"
+				end as CFG_Rank, 
+
+			Customer_Type,
+
+			Generation,
+
+			KIDS_STAGE,
+
+			Occupation,
+
+			case when BEAUTY_LUXURY_SEGMENT = "SUPER LUXURY" then "01_SUPER LUXURY"
+					when BEAUTY_LUXURY_SEGMENT = "LUXURY" then "02_LUXURY"
+					when BEAUTY_LUXURY_SEGMENT = "ACCESSIBLE LUXURY" then "03_ACCESSIBLE LUXURY"
+					when BEAUTY_LUXURY_SEGMENT = "UPPER MASS" then "04_UPPER MASS"
+					when BEAUTY_LUXURY_SEGMENT = "MASS" then "05_MASS"
+				else "99_Other"
+				end as BEAUTY_LUXURY_SEGMENT,
+
+           BEAUTY_SEGMENT,
+
+           case when ELECTRONICS_LUXURY_SEGMENT = "LUXURY" then "01_LUXURY"
+					when ELECTRONICS_LUXURY_SEGMENT = "UPPER MASS" then "02_UPPER MASS"
+					when ELECTRONICS_LUXURY_SEGMENT = "MASS" then "03_MASS"
+				else "99_Other"
+				end as ELECTRONICS_LUXURY_SEGMENT,
+
+           case when FASHION_LUXURY_SEGMENT = "SUPER LUXURY" then "01_SUPER LUXURY"
+					when FASHION_LUXURY_SEGMENT = "LUXURY" then "02_LUXURY"
+					when FASHION_LUXURY_SEGMENT = "ACCESSIBLE LUXURY" then "03_ACCESSIBLE LUXURY"
+					when FASHION_LUXURY_SEGMENT = "UPPER MASS" then "04_UPPER MASS"
+					when FASHION_LUXURY_SEGMENT = "MASS" then "05_MASS"
+				else "99_Other"
+				end as FASHION_LUXURY_SEGMENT,
+
+           case when FOOD_LUXURY_SEGMENT = "SUPER LUXURY" then "01_SUPER LUXURY"
+					when FOOD_LUXURY_SEGMENT = "LUXURY" then "02_LUXURY"
+					when FOOD_LUXURY_SEGMENT = "ACCESSIBLE LUXURY" then "03_ACCESSIBLE LUXURY"
+					when FOOD_LUXURY_SEGMENT = "UPPER MASS" then "04_UPPER MASS"
+					when FOOD_LUXURY_SEGMENT = "MASS" then "05_MASS"
+				else "99_Other"
+				end as FOOD_LUXURY_SEGMENT,
+
+           PAYMENT_SEGMENT,
+
+           case when POINT_LOVER_SEGMENT = "LOW" then "01_Low"
+					when POINT_LOVER_SEGMENT = "MID" then "02_Mid"
+					when POINT_LOVER_SEGMENT = "HIGH" then "03_High" else POINT_LOVER_SEGMENT end as POINT_LOVER_SEGMENT,
+           WEALTH_SEGMENT,
+
+           Flag_Omni_Channel
+
+     from BI.storecode_sbl_cfh as a
+	 left join CRM.CRM_SINGLE_view_24Q3 as e /*edit Single view*/
+     on a.SBL_Member_ID = e.SBL_Member_ID
+     ;
+quit;
+
+
+
+
+/*TM*/
+proc sql;
+	create table BI.storecode_sbl_tm as
+	select distinct st_code, store_format2, store_name, store_location, a.sbl_member_id, olympic_segment
+	from BI.storecode_sbl as a
+	left join topscrm.OLYMPIC_CFG_BY_BANNER as b /*edit olympic*/
+	on a.sbl_member_id = b.sbl_member_Id
+	where store_format2 = "TOPS MARKET"
+	and b.data_period in ('24Q3')
+	and b.store_format in ('TOPS MARKET')
+	;
+quit;
+
+proc sql threads;
+     create table BI.storecode_sbl_tm_p (compress=yes) as
+           select distinct st_code, store_format2, store_name, store_location, a.sbl_member_id,
+
+		   case when olympic_segment = "Diamond" then "01_Diamond"
+		   			when olympic_segment = "Platinum" then "02_Platinum"
+					when olympic_segment = "Gold" then "03_Gold"
+					when olympic_segment = "Silver" then "04_Silver"
+					when olympic_segment = "Bronze" then "05_Bronze"
+					else "99_Other"
+		   		end as olympic_segment, 
+
+			MARITALSTATUS   as MARITAL_STATUS,
+
+			age,
+
+           case 
+                when age is null Then '99_Unknown'
+                when (age >= 0 and age <18) then  '00_<18'
+                when age <25 then  '01_18-24'
+                else Age_Range 
+           end as Age_Range,
+
+           case
+                when Gender = 'F' then '01_Female'
+                when Gender = 'M' then '02_Male'
+                else '99_Other' 
+           end as Gender,
+
+           case when Education_Level = "Primary School" then "01_Primary School"
+					when Education_Level = "Secondary School" then "02_Secondary School"
+					when Education_Level = "College" then "03_College"
+					when Education_Level = "Bachelor Degree" then "04_Bachelor Degree"
+					when Education_Level = "Master Degree" then "05_Master Degree"
+					when Education_Level = "Doctorate" then "06_Doctorate"
+				else "99_Other"
+				end as Education_Level,
+
+           HH_Income as MTHLY_INCOME,
+
+           put(SEGMENT_no_gp_e,2.)!!'_'!!segment_gp_e as segment,
+
+           case when CFR_COMPANY_RANK = "TOP 1%" then "01_TOP 1%"
+					when CFR_COMPANY_RANK = "TOP 2-10%" then "02_TOP 2-10%"
+					when CFR_COMPANY_RANK = "TOP 11-20%" then "03_TOP 11-20%"
+					when CFR_COMPANY_RANK = "TOP 21-40%" then "04_TOP 21-40%"
+					when CFR_COMPANY_RANK = "TOP 41-60%" then "05_TOP 41-60%"
+					when CFR_COMPANY_RANK = "TOP 61-80%" then "06_TOP 61-80%"
+					when CFR_COMPANY_RANK = "Bottom 20%" then "07_Bottom 20%"
+					when CFR_COMPANY_RANK = "Wholesale" then "08_Wholesale"
+				else "99_Other"
+				end as CFR_COMPANY_RANK,
+
+           case when CFG_Rank = "TOP 1%" then "01_TOP 1%"
+					when CFG_Rank = "TOP 2-10%" then "02_TOP 2-10%"
+					when CFG_Rank = "TOP 11-20%" then "03_TOP 11-20%"
+					when CFG_Rank = "TOP 21-40%" then "04_TOP 21-40%"
+					when CFG_Rank = "TOP 41-60%" then "05_TOP 41-60%"
+					when CFG_Rank = "TOP 61-80%" then "06_TOP 61-80%"
+					when CFG_Rank = "Bottom 20%" then "07_Bottom 20%"
+				else "99_Other"
+				end as CFG_Rank, 
+
+			Customer_Type,
+
+			Generation,
+
+			KIDS_STAGE,
+
+			Occupation,
+
+			case when BEAUTY_LUXURY_SEGMENT = "SUPER LUXURY" then "01_SUPER LUXURY"
+					when BEAUTY_LUXURY_SEGMENT = "LUXURY" then "02_LUXURY"
+					when BEAUTY_LUXURY_SEGMENT = "ACCESSIBLE LUXURY" then "03_ACCESSIBLE LUXURY"
+					when BEAUTY_LUXURY_SEGMENT = "UPPER MASS" then "04_UPPER MASS"
+					when BEAUTY_LUXURY_SEGMENT = "MASS" then "05_MASS"
+				else "99_Other"
+				end as BEAUTY_LUXURY_SEGMENT,
+
+           BEAUTY_SEGMENT,
+
+           case when ELECTRONICS_LUXURY_SEGMENT = "LUXURY" then "01_LUXURY"
+					when ELECTRONICS_LUXURY_SEGMENT = "UPPER MASS" then "02_UPPER MASS"
+					when ELECTRONICS_LUXURY_SEGMENT = "MASS" then "03_MASS"
+				else "99_Other"
+				end as ELECTRONICS_LUXURY_SEGMENT,
+
+           case when FASHION_LUXURY_SEGMENT = "SUPER LUXURY" then "01_SUPER LUXURY"
+					when FASHION_LUXURY_SEGMENT = "LUXURY" then "02_LUXURY"
+					when FASHION_LUXURY_SEGMENT = "ACCESSIBLE LUXURY" then "03_ACCESSIBLE LUXURY"
+					when FASHION_LUXURY_SEGMENT = "UPPER MASS" then "04_UPPER MASS"
+					when FASHION_LUXURY_SEGMENT = "MASS" then "05_MASS"
+				else "99_Other"
+				end as FASHION_LUXURY_SEGMENT,
+
+           case when FOOD_LUXURY_SEGMENT = "SUPER LUXURY" then "01_SUPER LUXURY"
+					when FOOD_LUXURY_SEGMENT = "LUXURY" then "02_LUXURY"
+					when FOOD_LUXURY_SEGMENT = "ACCESSIBLE LUXURY" then "03_ACCESSIBLE LUXURY"
+					when FOOD_LUXURY_SEGMENT = "UPPER MASS" then "04_UPPER MASS"
+					when FOOD_LUXURY_SEGMENT = "MASS" then "05_MASS"
+				else "99_Other"
+				end as FOOD_LUXURY_SEGMENT,
+
+           PAYMENT_SEGMENT,
+
+           case when POINT_LOVER_SEGMENT = "LOW" then "01_Low"
+					when POINT_LOVER_SEGMENT = "MID" then "02_Mid"
+					when POINT_LOVER_SEGMENT = "HIGH" then "03_High" else POINT_LOVER_SEGMENT end as POINT_LOVER_SEGMENT,
+           WEALTH_SEGMENT,
+
+           Flag_Omni_Channel
+
+     from BI.storecode_sbl_tm as a
+	 left join CRM.CRM_SINGLE_view_24Q3 as e /*edit Single view*/
+     on a.SBL_Member_ID = e.SBL_Member_ID
+     ;
+quit;
+
+
+/*TFF*/
+proc sql;
+	create table BI.storecode_sbl_tff as
+	select distinct st_code, store_format2, store_name, store_location, a.sbl_member_id, "" as olympic_segment
+	from BI.storecode_sbl as a
+	where store_format2 = "TOPS Fine Food"
+	;
+quit;
+
+
+proc sql threads;
+     create table BI.storecode_sbl_tff_p (compress=yes) as
+           select distinct st_code, store_format2, store_name, store_location, a.sbl_member_id,
+
+		   case when olympic_segment = "Diamond" then "01_Diamond"
+		   			when olympic_segment = "Platinum" then "02_Platinum"
+					when olympic_segment = "Gold" then "03_Gold"
+					when olympic_segment = "Silver" then "04_Silver"
+					when olympic_segment = "Bronze" then "05_Bronze"
+					else "99_Other"
+		   		end as olympic_segment, 
+
+			MARITALSTATUS   as MARITAL_STATUS,
+
+			age,
+
+           case 
+                when age is null Then '99_Unknown'
+                when (age >= 0 and age <18) then  '00_<18'
+                when age <25 then  '01_18-24'
+                else Age_Range 
+           end as Age_Range,
+
+           case
+                when Gender = 'F' then '01_Female'
+                when Gender = 'M' then '02_Male'
+                else '99_Other' 
+           end as Gender,
+
+           case when Education_Level = "Primary School" then "01_Primary School"
+					when Education_Level = "Secondary School" then "02_Secondary School"
+					when Education_Level = "College" then "03_College"
+					when Education_Level = "Bachelor Degree" then "04_Bachelor Degree"
+					when Education_Level = "Master Degree" then "05_Master Degree"
+					when Education_Level = "Doctorate" then "06_Doctorate"
+				else "99_Other"
+				end as Education_Level,
+
+           HH_Income as MTHLY_INCOME,
+
+           put(SEGMENT_no_gp_e,2.)!!'_'!!segment_gp_e as segment,
+
+           case when CFR_COMPANY_RANK = "TOP 1%" then "01_TOP 1%"
+					when CFR_COMPANY_RANK = "TOP 2-10%" then "02_TOP 2-10%"
+					when CFR_COMPANY_RANK = "TOP 11-20%" then "03_TOP 11-20%"
+					when CFR_COMPANY_RANK = "TOP 21-40%" then "04_TOP 21-40%"
+					when CFR_COMPANY_RANK = "TOP 41-60%" then "05_TOP 41-60%"
+					when CFR_COMPANY_RANK = "TOP 61-80%" then "06_TOP 61-80%"
+					when CFR_COMPANY_RANK = "Bottom 20%" then "07_Bottom 20%"
+					when CFR_COMPANY_RANK = "Wholesale" then "08_Wholesale"
+				else "99_Other"
+				end as CFR_COMPANY_RANK,
+
+           case when CFG_Rank = "TOP 1%" then "01_TOP 1%"
+					when CFG_Rank = "TOP 2-10%" then "02_TOP 2-10%"
+					when CFG_Rank = "TOP 11-20%" then "03_TOP 11-20%"
+					when CFG_Rank = "TOP 21-40%" then "04_TOP 21-40%"
+					when CFG_Rank = "TOP 41-60%" then "05_TOP 41-60%"
+					when CFG_Rank = "TOP 61-80%" then "06_TOP 61-80%"
+					when CFG_Rank = "Bottom 20%" then "07_Bottom 20%"
+				else "99_Other"
+				end as CFG_Rank, 
+
+			Customer_Type,
+
+			Generation,
+
+			KIDS_STAGE,
+
+			Occupation,
+
+			case when BEAUTY_LUXURY_SEGMENT = "SUPER LUXURY" then "01_SUPER LUXURY"
+					when BEAUTY_LUXURY_SEGMENT = "LUXURY" then "02_LUXURY"
+					when BEAUTY_LUXURY_SEGMENT = "ACCESSIBLE LUXURY" then "03_ACCESSIBLE LUXURY"
+					when BEAUTY_LUXURY_SEGMENT = "UPPER MASS" then "04_UPPER MASS"
+					when BEAUTY_LUXURY_SEGMENT = "MASS" then "05_MASS"
+				else "99_Other"
+				end as BEAUTY_LUXURY_SEGMENT,
+
+           BEAUTY_SEGMENT,
+
+           case when ELECTRONICS_LUXURY_SEGMENT = "LUXURY" then "01_LUXURY"
+					when ELECTRONICS_LUXURY_SEGMENT = "UPPER MASS" then "02_UPPER MASS"
+					when ELECTRONICS_LUXURY_SEGMENT = "MASS" then "03_MASS"
+				else "99_Other"
+				end as ELECTRONICS_LUXURY_SEGMENT,
+
+           case when FASHION_LUXURY_SEGMENT = "SUPER LUXURY" then "01_SUPER LUXURY"
+					when FASHION_LUXURY_SEGMENT = "LUXURY" then "02_LUXURY"
+					when FASHION_LUXURY_SEGMENT = "ACCESSIBLE LUXURY" then "03_ACCESSIBLE LUXURY"
+					when FASHION_LUXURY_SEGMENT = "UPPER MASS" then "04_UPPER MASS"
+					when FASHION_LUXURY_SEGMENT = "MASS" then "05_MASS"
+				else "99_Other"
+				end as FASHION_LUXURY_SEGMENT,
+
+           case when FOOD_LUXURY_SEGMENT = "SUPER LUXURY" then "01_SUPER LUXURY"
+					when FOOD_LUXURY_SEGMENT = "LUXURY" then "02_LUXURY"
+					when FOOD_LUXURY_SEGMENT = "ACCESSIBLE LUXURY" then "03_ACCESSIBLE LUXURY"
+					when FOOD_LUXURY_SEGMENT = "UPPER MASS" then "04_UPPER MASS"
+					when FOOD_LUXURY_SEGMENT = "MASS" then "05_MASS"
+				else "99_Other"
+				end as FOOD_LUXURY_SEGMENT,
+
+           PAYMENT_SEGMENT,
+
+           case when POINT_LOVER_SEGMENT = "LOW" then "01_Low"
+					when POINT_LOVER_SEGMENT = "MID" then "02_Mid"
+					when POINT_LOVER_SEGMENT = "HIGH" then "03_High" else POINT_LOVER_SEGMENT end as POINT_LOVER_SEGMENT,
+           WEALTH_SEGMENT,
+
+           Flag_Omni_Channel
+
+     from BI.storecode_sbl_tff as a
+	 left join CRM.CRM_SINGLE_view_24Q3 as e /*edit Single view*/
+     on a.SBL_Member_ID = e.SBL_Member_ID
+     ;
+quit;
+
+/*TD*/
+proc sql;
+	create table BI.storecode_sbl_td as
+	select distinct st_code, store_format2, store_name, store_location, a.sbl_member_id, olympic_segment
+	from BI.storecode_sbl as a
+	left join topscrm.OLYMPIC_CFG_BY_BANNER as b /*edit olympic*/
+	on a.sbl_member_id = b.sbl_member_Id
+	where store_format2 = "TOPS DAILY"
+	and b.data_period in ('24Q3')
+	and b.store_format in ('TOPS DAILY')
+	;
+quit;
+
+
+proc sql threads;
+     create table BI.storecode_sbl_td_p (compress=yes) as
+           select distinct st_code, store_format2, store_name, store_location, a.sbl_member_id,
+
+		   case when olympic_segment = "Diamond" then "01_Diamond"
+		   			when olympic_segment = "Platinum" then "02_Platinum"
+					when olympic_segment = "Gold" then "03_Gold"
+					when olympic_segment = "Silver" then "04_Silver"
+					when olympic_segment = "Bronze" then "05_Bronze"
+					else "99_Other"
+		   		end as olympic_segment, 
+
+			MARITALSTATUS   as MARITAL_STATUS,
+
+			age,
+
+           case 
+                when age is null Then '99_Unknown'
+                when (age >= 0 and age <18) then  '00_<18'
+                when age <25 then  '01_18-24'
+                else Age_Range 
+           end as Age_Range,
+
+           case
+                when Gender = 'F' then '01_Female'
+                when Gender = 'M' then '02_Male'
+                else '99_Other' 
+           end as Gender,
+
+           case when Education_Level = "Primary School" then "01_Primary School"
+					when Education_Level = "Secondary School" then "02_Secondary School"
+					when Education_Level = "College" then "03_College"
+					when Education_Level = "Bachelor Degree" then "04_Bachelor Degree"
+					when Education_Level = "Master Degree" then "05_Master Degree"
+					when Education_Level = "Doctorate" then "06_Doctorate"
+				else "99_Other"
+				end as Education_Level,
+
+           HH_Income as MTHLY_INCOME,
+
+           put(SEGMENT_no_gp_e,2.)!!'_'!!segment_gp_e as segment,
+
+           case when CFR_COMPANY_RANK = "TOP 1%" then "01_TOP 1%"
+					when CFR_COMPANY_RANK = "TOP 2-10%" then "02_TOP 2-10%"
+					when CFR_COMPANY_RANK = "TOP 11-20%" then "03_TOP 11-20%"
+					when CFR_COMPANY_RANK = "TOP 21-40%" then "04_TOP 21-40%"
+					when CFR_COMPANY_RANK = "TOP 41-60%" then "05_TOP 41-60%"
+					when CFR_COMPANY_RANK = "TOP 61-80%" then "06_TOP 61-80%"
+					when CFR_COMPANY_RANK = "Bottom 20%" then "07_Bottom 20%"
+					when CFR_COMPANY_RANK = "Wholesale" then "08_Wholesale"
+				else "99_Other"
+				end as CFR_COMPANY_RANK,
+
+           case when CFG_Rank = "TOP 1%" then "01_TOP 1%"
+					when CFG_Rank = "TOP 2-10%" then "02_TOP 2-10%"
+					when CFG_Rank = "TOP 11-20%" then "03_TOP 11-20%"
+					when CFG_Rank = "TOP 21-40%" then "04_TOP 21-40%"
+					when CFG_Rank = "TOP 41-60%" then "05_TOP 41-60%"
+					when CFG_Rank = "TOP 61-80%" then "06_TOP 61-80%"
+					when CFG_Rank = "Bottom 20%" then "07_Bottom 20%"
+				else "99_Other"
+				end as CFG_Rank, 
+
+			Customer_Type,
+
+			Generation,
+
+			KIDS_STAGE,
+
+			Occupation,
+
+			case when BEAUTY_LUXURY_SEGMENT = "SUPER LUXURY" then "01_SUPER LUXURY"
+					when BEAUTY_LUXURY_SEGMENT = "LUXURY" then "02_LUXURY"
+					when BEAUTY_LUXURY_SEGMENT = "ACCESSIBLE LUXURY" then "03_ACCESSIBLE LUXURY"
+					when BEAUTY_LUXURY_SEGMENT = "UPPER MASS" then "04_UPPER MASS"
+					when BEAUTY_LUXURY_SEGMENT = "MASS" then "05_MASS"
+				else "99_Other"
+				end as BEAUTY_LUXURY_SEGMENT,
+
+           BEAUTY_SEGMENT,
+
+           case when ELECTRONICS_LUXURY_SEGMENT = "LUXURY" then "01_LUXURY"
+					when ELECTRONICS_LUXURY_SEGMENT = "UPPER MASS" then "02_UPPER MASS"
+					when ELECTRONICS_LUXURY_SEGMENT = "MASS" then "03_MASS"
+				else "99_Other"
+				end as ELECTRONICS_LUXURY_SEGMENT,
+
+           case when FASHION_LUXURY_SEGMENT = "SUPER LUXURY" then "01_SUPER LUXURY"
+					when FASHION_LUXURY_SEGMENT = "LUXURY" then "02_LUXURY"
+					when FASHION_LUXURY_SEGMENT = "ACCESSIBLE LUXURY" then "03_ACCESSIBLE LUXURY"
+					when FASHION_LUXURY_SEGMENT = "UPPER MASS" then "04_UPPER MASS"
+					when FASHION_LUXURY_SEGMENT = "MASS" then "05_MASS"
+				else "99_Other"
+				end as FASHION_LUXURY_SEGMENT,
+
+           case when FOOD_LUXURY_SEGMENT = "SUPER LUXURY" then "01_SUPER LUXURY"
+					when FOOD_LUXURY_SEGMENT = "LUXURY" then "02_LUXURY"
+					when FOOD_LUXURY_SEGMENT = "ACCESSIBLE LUXURY" then "03_ACCESSIBLE LUXURY"
+					when FOOD_LUXURY_SEGMENT = "UPPER MASS" then "04_UPPER MASS"
+					when FOOD_LUXURY_SEGMENT = "MASS" then "05_MASS"
+				else "99_Other"
+				end as FOOD_LUXURY_SEGMENT,
+
+           PAYMENT_SEGMENT,
+
+           case when POINT_LOVER_SEGMENT = "LOW" then "01_Low"
+					when POINT_LOVER_SEGMENT = "MID" then "02_Mid"
+					when POINT_LOVER_SEGMENT = "HIGH" then "03_High" else POINT_LOVER_SEGMENT end as POINT_LOVER_SEGMENT,
+           WEALTH_SEGMENT,
+
+           Flag_Omni_Channel
+
+     from BI.storecode_sbl_td as a
+	 left join CRM.CRM_SINGLE_view_24Q3 as e /*edit Single view*/
+     on a.SBL_Member_ID = e.SBL_Member_ID
+     ;
+quit;
+
+
+
+
+
+/*CFM*/
+proc sql;
+	create table BI.storecode_sbl_cfm as
+	select distinct st_code, store_format2, store_name, store_location, a.sbl_member_id, olympic_segment
+	from BI.storecode_sbl as a
+	left join topscrm.OLYMPIC_CFG_BY_BANNER as b /*edit olympic*/
+	on a.sbl_member_id = b.sbl_member_Id
+	where store_format2 = "CFM"
+	and b.data_period in ('24Q3')
+	and b.store_format in ('Family Mart')
+	;
+quit;
+
+
+proc sql threads;
+     create table BI.storecode_sbl_cfm_p (compress=yes) as
+           select distinct st_code, store_format2, store_name, store_location, a.sbl_member_id,
+
+		   case when olympic_segment = "Diamond" then "01_Diamond"
+		   			when olympic_segment = "Platinum" then "02_Platinum"
+					when olympic_segment = "Gold" then "03_Gold"
+					when olympic_segment = "Silver" then "04_Silver"
+					when olympic_segment = "Bronze" then "05_Bronze"
+					else "99_Other"
+		   		end as olympic_segment, 
+
+			MARITALSTATUS   as MARITAL_STATUS,
+
+			age,
+
+           case 
+                when age is null Then '99_Unknown'
+                when (age >= 0 and age <18) then  '00_<18'
+                when age <25 then  '01_18-24'
+                else Age_Range 
+           end as Age_Range,
+
+           case
+                when Gender = 'F' then '01_Female'
+                when Gender = 'M' then '02_Male'
+                else '99_Other' 
+           end as Gender,
+
+           case when Education_Level = "Primary School" then "01_Primary School"
+					when Education_Level = "Secondary School" then "02_Secondary School"
+					when Education_Level = "College" then "03_College"
+					when Education_Level = "Bachelor Degree" then "04_Bachelor Degree"
+					when Education_Level = "Master Degree" then "05_Master Degree"
+					when Education_Level = "Doctorate" then "06_Doctorate"
+				else "99_Other"
+				end as Education_Level,
+
+           HH_Income as MTHLY_INCOME,
+
+           put(SEGMENT_no_gp_e,2.)!!'_'!!segment_gp_e as segment,
+
+           case when CFR_COMPANY_RANK = "TOP 1%" then "01_TOP 1%"
+					when CFR_COMPANY_RANK = "TOP 2-10%" then "02_TOP 2-10%"
+					when CFR_COMPANY_RANK = "TOP 11-20%" then "03_TOP 11-20%"
+					when CFR_COMPANY_RANK = "TOP 21-40%" then "04_TOP 21-40%"
+					when CFR_COMPANY_RANK = "TOP 41-60%" then "05_TOP 41-60%"
+					when CFR_COMPANY_RANK = "TOP 61-80%" then "06_TOP 61-80%"
+					when CFR_COMPANY_RANK = "Bottom 20%" then "07_Bottom 20%"
+					when CFR_COMPANY_RANK = "Wholesale" then "08_Wholesale"
+				else "99_Other"
+				end as CFR_COMPANY_RANK,
+
+           case when CFG_Rank = "TOP 1%" then "01_TOP 1%"
+					when CFG_Rank = "TOP 2-10%" then "02_TOP 2-10%"
+					when CFG_Rank = "TOP 11-20%" then "03_TOP 11-20%"
+					when CFG_Rank = "TOP 21-40%" then "04_TOP 21-40%"
+					when CFG_Rank = "TOP 41-60%" then "05_TOP 41-60%"
+					when CFG_Rank = "TOP 61-80%" then "06_TOP 61-80%"
+					when CFG_Rank = "Bottom 20%" then "07_Bottom 20%"
+				else "99_Other"
+				end as CFG_Rank, 
+
+			Customer_Type,
+
+			Generation,
+
+			KIDS_STAGE,
+
+			Occupation,
+
+			case when BEAUTY_LUXURY_SEGMENT = "SUPER LUXURY" then "01_SUPER LUXURY"
+					when BEAUTY_LUXURY_SEGMENT = "LUXURY" then "02_LUXURY"
+					when BEAUTY_LUXURY_SEGMENT = "ACCESSIBLE LUXURY" then "03_ACCESSIBLE LUXURY"
+					when BEAUTY_LUXURY_SEGMENT = "UPPER MASS" then "04_UPPER MASS"
+					when BEAUTY_LUXURY_SEGMENT = "MASS" then "05_MASS"
+				else "99_Other"
+				end as BEAUTY_LUXURY_SEGMENT,
+
+           BEAUTY_SEGMENT,
+
+           case when ELECTRONICS_LUXURY_SEGMENT = "LUXURY" then "01_LUXURY"
+					when ELECTRONICS_LUXURY_SEGMENT = "UPPER MASS" then "02_UPPER MASS"
+					when ELECTRONICS_LUXURY_SEGMENT = "MASS" then "03_MASS"
+				else "99_Other"
+				end as ELECTRONICS_LUXURY_SEGMENT,
+
+           case when FASHION_LUXURY_SEGMENT = "SUPER LUXURY" then "01_SUPER LUXURY"
+					when FASHION_LUXURY_SEGMENT = "LUXURY" then "02_LUXURY"
+					when FASHION_LUXURY_SEGMENT = "ACCESSIBLE LUXURY" then "03_ACCESSIBLE LUXURY"
+					when FASHION_LUXURY_SEGMENT = "UPPER MASS" then "04_UPPER MASS"
+					when FASHION_LUXURY_SEGMENT = "MASS" then "05_MASS"
+				else "99_Other"
+				end as FASHION_LUXURY_SEGMENT,
+
+           case when FOOD_LUXURY_SEGMENT = "SUPER LUXURY" then "01_SUPER LUXURY"
+					when FOOD_LUXURY_SEGMENT = "LUXURY" then "02_LUXURY"
+					when FOOD_LUXURY_SEGMENT = "ACCESSIBLE LUXURY" then "03_ACCESSIBLE LUXURY"
+					when FOOD_LUXURY_SEGMENT = "UPPER MASS" then "04_UPPER MASS"
+					when FOOD_LUXURY_SEGMENT = "MASS" then "05_MASS"
+				else "99_Other"
+				end as FOOD_LUXURY_SEGMENT,
+
+           PAYMENT_SEGMENT,
+
+           case when POINT_LOVER_SEGMENT = "LOW" then "01_Low"
+					when POINT_LOVER_SEGMENT = "MID" then "02_Mid"
+					when POINT_LOVER_SEGMENT = "HIGH" then "03_High" else POINT_LOVER_SEGMENT end as POINT_LOVER_SEGMENT,
+           WEALTH_SEGMENT,
+
+           Flag_Omni_Channel
+
+     from BI.storecode_sbl_cfm as a
+	 left join CRM.CRM_SINGLE_view_24Q3 as e /*edit Single view*/
+     on a.SBL_Member_ID = e.SBL_Member_ID
+     ;
+quit;
+
+
+
+
+
+
+
+
+
+
+
+
+data BI.storecode_sbl_p;
+set BI.storecode_sbl_cfh_p
+BI.storecode_sbl_tm_p
+BI.storecode_sbl_tff_p
+BI.storecode_sbl_td_p
+BI.storecode_sbl_cfm_p
+;
+run;
+
+
+
+/*by store*/
+PROC SQL;
+     CREATE TABLE BI.storecode_sbl_p_profile (compress= yes) as
+	            select distinct 
+				put( "",$40.) as st_code,
+				put( "",$40.) as store_format2,
+				put( "",$40.) as store_name,
+				put( "",$40.) as store_location,
+				put( "",$40.) as Type, 
+                put( "",$40.)as detail_Type,
+                0 as SBL_Member_id
+
+           from BI.storecode_sbl_p;
+quit;
+
+%Macro execute_S(a,b,c);
+     proc sql threads;
+           insert into  BI.storecode_sbl_p_profile 
+           select st_code, store_format2, store_name, store_location,
+					&b,
+					&c,
+                     count(distinct a.SBL_Member_id) as SBL_Member_id
+           from BI.storecode_sbl_p as a 
+           group by st_code, store_format2, store_name, store_location, &b,&c;
+     quit;
+%Mend;
+
+options mprint;
+%execute_s(Age,'Age_Range',Age_Range);
+%execute_s(GEN,'Generation',Generation);
+%execute_s(STATUS,'Marital_Status',MARITAL_STATUS);
+%execute_s(SEX,'Gender',Gender);
+%execute_s(WORKN,'Occupation',Occupation);
+%execute_s(Edu,'Education',Education_Level);
+%execute_s(MONTHIN,'Monthly_income',Mthly_Income);
+%execute_s(CUSTOMER_TYPE,'Customer_Type',Customer_Type);
+%execute_s(segment,'Segment',segment);
+%execute_s(WEALTH,'Wealth_Score',WEALTH_SEGMENT);
+%execute_s(FOOD,'Food_Luxury',FOOD_LUXURY_SEGMENT);
+%execute_s(BEAUTY_SEGMENT,'Beauty_Segment',BEAUTY_SEGMENT);
+%execute_s(BEAUTY_LUXURY_SEG,'Beauty_Luxury_Segment',BEAUTY_LUXURY_SEGMENT);
+%execute_s(CFR_COMPANY_RANK,'CFR_Company_Rank',CFR_COMPANY_RANK);
+%execute_s(CFG_Rank,'CFG_Rank',CFG_Rank);
+%execute_s(ELECTRONICS_LUXURY_SEGMENT,'Electronics_Luxury_Segment',ELECTRONICS_LUXURY_SEGMENT);
+%execute_s(FASHION_LUXURY_SEGMENT,'Fashion_Luxury_Segment',FASHION_LUXURY_SEGMENT);
+%execute_s(PAYMENT_SEGMENT,'Payment_Segment',PAYMENT_SEGMENT);
+%execute_s(KIDS_STAGE,'Kids_Stage',KIDS_STAGE);
+%execute_s(POINT_LOVER_SEGMENT,'Point_Lover_Segment',POINT_LOVER_SEGMENT);
+%execute_s(Flag_Omni_Channel,'Flag_Omni_Channel',Flag_Omni_Channel);
+%execute_s(olympic_segment,'Olympic_Segment',olympic_segment);
+
+proc sql;
+	create table BI.storecode_sbl_p_profile_2 (compress = yes) as
+	select *
+	from BI.storecode_sbl_p_profile
+	where type is not null 
+				and detail_type is not null
+				and detail_type not in ("._", "Other", "99_Unknown", "C.UNKNOWN", "N/A",  "Unknown", "99_Other", "D.UNKNOWN",  "_")
+	;
+quit;
+
+
+/*by store format & location*/
+proc sql;
+	create table BI.storeformat_sbl_p as
+	select distinct store_format2, catt("_", store_format2) as store_name, store_location, sbl_member_id, 
+							olympic_segment,
+							MARITAL_STATUS, 
+							age,
+							Age_Range, 
+							Gender, 
+							Education_Level, 
+							MTHLY_INCOME,
+							segment,
+							CFR_COMPANY_RANK, 
+							CFG_Rank,
+							Generation,
+							KIDS_STAGE,
+							Occupation,
+							CUSTOMER_TYPE,
+							BEAUTY_LUXURY_SEGMENT,
+							BEAUTY_SEGMENT,
+							ELECTRONICS_LUXURY_SEGMENT,
+							FASHION_LUXURY_SEGMENT,
+							FOOD_LUXURY_SEGMENT,
+							KIDS_STAGE,
+							PAYMENT_SEGMENT,
+							POINT_LOVER_SEGMENT,
+							WEALTH_SEGMENT,
+							Flag_Omni_Channel
+	from BI.storecode_sbl_p
+	;
+quit;
+
+PROC SQL;
+     CREATE TABLE BI.storeformat_sbl_p_profile (compress= yes) as
+	            select distinct 
+				put( "",$40.) as st_code,
+				put( "",$40.) as store_format2,
+				put( "",$40.) as store_name,
+				put( "",$40.) as store_location,
+				put( "",$40.) as Type, 
+                put( "",$40.)as detail_Type,
+                0 as SBL_Member_id
+
+           from BI.storeformat_sbl_p;
+quit;
+
+%Macro execute_S(a,b,c);
+     proc sql threads;
+           insert into  BI.storeformat_sbl_p_profile
+           select "" as st_code, store_format2, store_name, store_location,
+					&b,
+					&c,
+                     count(distinct a.SBL_Member_id) as SBL_Member_id
+           from BI.storeformat_sbl_p as a
+           group by st_code, store_format2, store_name, store_location, &b,&c;
+     quit;
+%Mend;
+
+options mprint;
+%execute_s(Age,'Age_Range',Age_Range);
+%execute_s(GEN,'Generation',Generation);
+%execute_s(STATUS,'Marital_Status',MARITAL_STATUS);
+%execute_s(SEX,'Gender',Gender);
+%execute_s(WORKN,'Occupation',Occupation);
+%execute_s(Edu,'Education',Education_Level);
+%execute_s(MONTHIN,'Monthly_income',Mthly_Income);
+%execute_s(CUSTOMER_TYPE,'Customer_Type',Customer_Type);
+%execute_s(segment,'Segment',segment);
+%execute_s(WEALTH,'Wealth_Score',WEALTH_SEGMENT);
+%execute_s(FOOD,'Food_Luxury',FOOD_LUXURY_SEGMENT);
+%execute_s(BEAUTY_SEGMENT,'Beauty_Segment',BEAUTY_SEGMENT);
+%execute_s(BEAUTY_LUXURY_SEG,'Beauty_Luxury_Segment',BEAUTY_LUXURY_SEGMENT);
+%execute_s(CFR_COMPANY_RANK,'CFR_Company_Rank',CFR_COMPANY_RANK);
+%execute_s(CFG_Rank,'CFG_Rank',CFG_Rank);
+%execute_s(ELECTRONICS_LUXURY_SEGMENT,'Electronics_Luxury_Segment',ELECTRONICS_LUXURY_SEGMENT);
+%execute_s(FASHION_LUXURY_SEGMENT,'Fashion_Luxury_Segment',FASHION_LUXURY_SEGMENT);
+%execute_s(PAYMENT_SEGMENT,'Payment_Segment',PAYMENT_SEGMENT);
+%execute_s(KIDS_STAGE,'Kids_Stage',KIDS_STAGE);
+%execute_s(POINT_LOVER_SEGMENT,'Point_Lover_Segment',POINT_LOVER_SEGMENT);
+%execute_s(Flag_Omni_Channel,'Flag_Omni_Channel',Flag_Omni_Channel);
+%execute_s(olympic_segment,'Olympic_Segment',olympic_segment);
+
+proc sql;
+	create table BI.storeformat_sbl_p_profile_2 (compress = yes) as
+	select *
+	from BI.storeformat_sbl_p_profile
+	where type is not null 
+				and detail_type is not null
+				and detail_type not in ("._", "Other", "99_Unknown", "C.UNKNOWN", "N/A",  "Unknown", "99_Other", "D.UNKNOWN", "_")
+	;
+quit;
+
+/*combine*/
+data BI.profile_summary;
+set BI.storecode_sbl_p_profile_2
+BI.storeformat_sbl_p_profile_2
+;
+run;
+
+/*export .txt file*/
+PROC EXPORT DATA= BI.PROFILE_SUMMARY
+            OUTFILE= "\\cfhqsaspwbi02\PBI\Customer Profile_Quarter_PBI\24Q3_v2\PROFILE_SUMMARY.txt" 
+            DBMS=DLM REPLACE;
+     DELIMITER='7C'x; 
+     PUTNAMES=YES;
+RUN;
+
+
+
+
+
+
+
+
+
+/*mapping home address*/
+proc sql;
+	create table BI.sale_m_sbl as
+	select distinct st_code, store_format2, store_name, store_location,	a.sbl_member_id,
+				b.home_subdistrict, b.home_district, b.home_city,
+				sum(tx) as tx, 
+				sum(quant) as quant, 
+				sum(total)as total, 
+				sum(GP) as gp, 
+				sum(net_total) as net_total
+	from BI.sale_m as a
+	left join topssbl.sbl_customer as b
+	on a.sbl_member_id = b.sbl_member_id
+	group by st_code, store_format2, store_name, store_location, a.sbl_member_id, b.home_subdistrict, b.home_district, b.home_city
+	;
+quit;
+
+proc sql;
+	create table BI.sale_m_sbl_hmaddr as
+	select distinct st_code, store_format2, store_name, store_location, home_subdistrict, home_district, home_city,
+							count(distinct sbl_member_id) as tc,
+							sum(tx) as tx, 
+							sum(quant) as quant, 
+							sum(total)as total, 
+							sum(GP) as gp, 
+							sum(net_total) as net_total
+	from BI.sale_m_sbl
+	group by st_code, store_format2, store_name, store_location, home_subdistrict, home_district, home_city
+	;
+quit;
+
+/*export .txt file*/
+PROC EXPORT DATA= BI.SALE_M_SBL_HMADDR
+            OUTFILE= "\\cfhqsaspwbi02\PBI\Customer Profile_Quarter_PBI\24Q3_v2\SALE_M_SBL_HMADDR.txt" 
+            DBMS=DLM REPLACE;
+     DELIMITER='7C'x; 
+     PUTNAMES=YES;
+RUN;
+
+/*export .csv file*/
+PROC EXPORT DATA= BI.SALE_M_SBL_HMADDR
+            OUTFILE= "\\cfhqsaspwbi02\PBI\Customer Profile_Quarter_PBI\24Q3_v2\SALE_M_SBL_HMADDR.csv" 
+            DBMS=DLM REPLACE;
+     DELIMITER='7C'x; 
+     PUTNAMES=YES;
+RUN;
+
+
+
+
+
+
+/*-------------------------------------------------------------------------------------------------------------------*/
+options dlcreatedir;
+libname B2 ' G:\Ton\PowerBI_Customer_Profile_24Q3_penetration';
+
+/*Month 1-3*/
+%MACRO EXECUTE_SALE_TRANS(yyyymm);
+          PROC SQL threads;
+		  CREATE TABLE B2.store_m_&yyyymm (compress = yes) AS
+          SELECT distinct &yyyymm as period, store_id as st_code, store_name, 
+				case when store_format in ("TOPS MARKET", "Super Store A-P") then "TOPS MARKET" else store_format end as store_format2, 
+				store_location, sbl_member_id, subdept_code, subdept_eng_desc,
+				count(distinct Ref_key) as tx, 
+				sum(qty) as quant, 
+                sum(total) as total, 
+				sum(net_total) as net_total,
+                sum(GP) as gp
+          FROM Topst1c.sales_promotion_comp_&yyyymm as a, topsrst.d_store as b, topsrst.d_merchandise as c
+		  where a.store_id = b.store_code
+		  			and a.pr_code = c.product_code
+		  			and store_format in ("Central Food Hall", "TOPS MARKET", "TOPS DAILY", "Super Store A-P", "TOPS Fine Food", "TOPS CLUB")
+					and sbl_member_id is not null
+					and sbl_member_id not in ('9-014342304', '9-014223414',  '9-014511211', '9-014493473', '9-014234126', '9-014651449', '9999999999')
+		  group by period, st_code, store_name, store_format2, store_location, sbl_member_id, subdept_code, subdept_eng_desc
+		  having total >0
+          ;
+          QUIT;
+%MEND;
+
+OPTIONS mprint;
+%EXECUTE_SALE_TRANS(202407)
+%EXECUTE_SALE_TRANS(202408)
+%EXECUTE_SALE_TRANS(202409)
+;
+
+
+
+
+%MACRO EXECUTE_SALE_TRANS(yyyymm);
+          PROC SQL threads;
+		  CREATE TABLE B2.storecfm_m_&yyyymm (compress = yes) AS
+          SELECT distinct &yyyymm as period, '' as st_code, store_name, 
+				'CFM' as store_format2, 
+				store_location, sbl_member_id, c.HIERACHY_LV2_CODE as subdept_code, c.HIERACHY_LV2_NAME as subdept_eng_desc,
+				count(distinct Ref_key) as tx, 
+				sum(qty) as quant, 
+                sum(total) as total, 
+				sum(net_total) as net_total,
+                sum(GP) as gp
+          FROM Topst1c.cfm_sales_promotion_comp_&yyyymm as a, Topscfm.STORE_MASTER as b, topscfm.PRODUCT_MASTER as c
+		  where a.store_id = b.store_code
+		  			and a.pr_code = c.product_code
+					and sbl_member_id is not null
+					and sbl_member_id not in ('9-014342304', '9-014223414',  '9-014511211', '9-014493473', '9-014234126', '9-014651449', '9999999999')
+		  group by period, st_code, store_name, store_format2, store_location, sbl_member_id, subdept_code, subdept_eng_desc
+		  having total >0
+          ;
+          QUIT;
+%MEND;
+
+OPTIONS mprint;
+%EXECUTE_SALE_TRANS(202407)
+%EXECUTE_SALE_TRANS(202408)
+%EXECUTE_SALE_TRANS(202409)
+;
+
+
+
+data B2.sale_m;
+set B2.store_m_202407
+B2.store_m_202408
+B2.store_m_202409
+B2.storecfm_m_202407
+B2.storecfm_m_202408
+B2.storecfm_m_202409
+;
+run;
+
+
+
+
+/*Penetration by store code*/
+proc sql;
+	create table B2.sale_m_subdept_st_code as
+	select distinct st_code, store_name, store_format2, store_location, subdept_code, subdept_eng_desc,
+						count(distinct sbl_member_id) as tc
+	from B2.sale_m
+	group by st_code, store_name, store_format2, store_location, subdept_code, subdept_eng_desc
+	;
+quit;
+
+
+proc sql;
+	create table B2.sale_m_ccard as
+	select distinct store_format2, store_location,
+						count(distinct sbl_member_id) as tc
+	from B2.sale_m
+	group by store_format2, store_location
+	;
+quit;
+
+/*Penetration by store format & location*/
+proc sql;
+	create table B2.sale_m_subdept_st_format as
+	select distinct "" as st_code, catt("_", store_format2) as store_name, store_format2, store_location, subdept_code, subdept_eng_desc,
+							count(distinct sbl_member_id) as tc
+	from B2.sale_m
+	group by catt("_", store_format2), store_format2, store_location, subdept_code, subdept_eng_desc
+	;
+quit;
+
+/*Combine*/
+data B2.subdept_summary;
+set B2.sale_m_subdept_st_code
+B2.sale_m_subdept_st_format
+;
+run;
+
+/*export .txt file*/
+PROC EXPORT DATA= B2.SUBDEPT_SUMMARY
+            OUTFILE= "\\cfhqsaspwbi02\PBI\Customer Profile_Quarter_PBI\24Q3_v2\SUBDEPT_SUMMARY.txt" 
+            DBMS=DLM REPLACE;
+     DELIMITER='7C'x; 
+     PUTNAMES=YES;
+RUN;
+
