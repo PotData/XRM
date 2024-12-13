@@ -1,0 +1,704 @@
+/*Redeem Point Campaign Performance - Bi-Weekly*/
+
+
+options dlcreatedir;
+libname RP6 'G:\Ton\Redeem_Point_W2436';
+
+
+
+
+/*import file product_full*/
+
+PROC SQL THREADS;
+create table rp6.BARCODE_PRODUCT (compress= yes) as
+		select distinct *
+		from rp6.BARCODE_PRODUCT_Full
+		where ID in ('WK2436') /*แก้ไข WK ล่าสุด ตาม ID ที่ใส่ไว้ใน File Excel*/
+/*		where ID like ("WK22%") and ID <> "WK22"*/
+	;
+QUIT;
+
+PROC SQL THREADS;
+create table rp6.Bar(compress= yes) as
+		select distinct 'Product Barcode'n, Product_code, Product_eng_Desc, BRAND_ENG_NAME as brand, SUBDEPT_ENG_DESC, barcode as coupon_no
+		from 	rp6.BARCODE_PRODUCT 
+		left join topsrst.d_Merchandise 
+				on 'Product Barcode'n = product_code
+		where ID in ('WK2436') /*แก้ไข WK ล่าสุด ตาม ID ที่ใส่ไว้ใน File Excel*/
+/*		where ID like ("WK22%") and ID <> "WK22"*/
+	;
+QUIT;
+
+
+
+%MACRO EXECUTE_SALE_TRANS_ALL(yyyymm);
+proc sql threads;
+	create table rp6.Sale_2436_&yyyymm (compress = yes) as
+		select distinct &yyyymm as month, sbl_member_id, reference, store_id, pr_code, total, gp, net_total, trn_dte, qty
+		from Topst1c.SALES_PROMOTION_COMP_&yyyymm as A , Topsrst.d_store as B
+		where B.STORE_FORMAT in ('Central Food Hall', 'TOPS MARKET', 'Super Store A-P')
+        and trn_dte between '20240515' and '20240903'
+					and pr_code in (select distinct 'Product Barcode'n from rp6.BARCODE_PRODUCT ) 
+					and SBL_MEMBER_ID is not null and T1C_CARD_NO not like '709999999%' and T1C_CARD_NO 
+							not like '7011111111%' and  SBL_MEMBER_ID not in ('9-014342304','9-014223414','9-014511211','9-014493473','9-014234126','9-014651449','','9999999999');;
+quit;
+%MEND;
+
+OPTIONS mprint;
+%EXECUTE_SALE_TRANS_ALL(202405)
+%EXECUTE_SALE_TRANS_ALL(202406)
+%EXECUTE_SALE_TRANS_ALL(202407)
+%EXECUTE_SALE_TRANS_ALL(202408)
+%EXECUTE_SALE_TRANS_ALL(202409)
+;
+
+
+data rp6.Sale_2436(compress= yes);
+	set 
+		rp6.Sale_2436_202405
+		rp6.Sale_2436_202406
+		rp6.Sale_2436_202407
+		rp6.Sale_2436_202408
+		rp6.Sale_2436_202409
+;
+run;
+
+
+
+/*%MACRO EXECUTE_SALE_TRANS_ALL(yyyymm);*/
+/*proc sql threads;*/
+/*	insert into rp6.Sale_2414*/
+/*		select &yyyymm as month,sbl_member_id, reference, store_id, pr_code, total, gp, net_total, trn_dte, qty*/
+/*		from Topst1c.SALES_PROMOTION_COMP_&yyyymm*/
+/*		where trn_dte between '20230901' and '20230912'*/
+/*					and pr_code in (select distinct 'Product Barcode'n from rp6.BARCODE_PRODUCT ) */
+/*					and SBL_MEMBER_ID is not null and T1C_CARD_NO not like '709999999%' and T1C_CARD_NO */
+/*							not like '7011111111%' and  SBL_MEMBER_ID not in ('9-014342304','9-014223414','9-014511211','9-014493473','9-014234126','9-014651449','','9999999999');*/
+/*quit;*/
+/*%MEND;*/
+/**/
+/*OPTIONS mprint;*/
+/*%EXECUTE_SALE_TRANS_ALL(202309)*/
+/*;*/
+
+
+
+
+
+
+/*mapping member*/
+/*PROC SQL THREADS;*/
+/*create table rp6.Sale_2414 (compress= yes) as*/
+/*		select SBL_MEMBER_ID, a.**/
+/*		from rp6.Sale_2414 a*/
+/*		left join TOPSSBL.SBL_MEMBER_CARD_LIST b */
+/*		on a.T1C_CARD_NO = b.T1C_CARD_NO;*/
+/*QUIT;*/
+
+
+/*PROC SQL THREADS;*/
+/*alter table rp6.Sale_2414 DROP COLUMN FLAG_MEMBER;*/
+/*create table rp6.Sale_2414 (compress= yes) as*/
+/*		select *,*/
+/*				case when SBL_MEMBER_ID is not null and SBL_MEMBER_ID not in ('9-014342304','9-014223414','9-014511211','9-014493473','9-014234126','9-014651449','','9999999999') */
+/*				then 'Member' */
+/*				else 'Non Member' 	end as Flag_Member*/
+/*		from rp6.Sale_2414*/
+/*		having Flag_Member = 'Member';*/
+/*quit;*/
+
+
+/*create ID and Period column*/
+PROC SQL THREADS;
+create table rp6._00_(compress= yes) as
+	select distinct SBL_MEMBER_ID, month,reference, store_id, pr_code, total, gp, net_total, trn_dte, qty,
+				max(case when trn_dte between 'Period Start'n and 'Period end'n then ID 
+									when trn_dte between 'Previous Start'n and 'Previous end'n then ID 
+									end) as id,
+				max(case when trn_dte between 'Period Start'n and 'Period end'n then 'Period'
+									when trn_dte between 'Previous Start'n and 'Previous end'n then 'Previous' 
+									end ) as period
+	from rp6.Sale_2436 a 
+	left join rp6.BARCODE_PRODUCT
+	on pr_code = 'Product Barcode'n
+/*	left join topsrst.d_Merchandise */
+/*	on pr_code = product_code*/
+	group by SBL_MEMBER_ID, month, reference, store_id, pr_code, total, gp, net_total, trn_dte, qty
+	;
+QUIT;
+
+
+
+/*map sale with product code and product detail*/
+PROC SQL THREADS;
+create table  rp6._000_(compress= yes) as
+		select distinct id, period, store_format, store_name, a.*
+		from rp6._00_ a 
+		left join topsrst.d_store b
+		on store_id = store_code
+		where id is not null
+	;
+QUIT;
+
+PROC SQL THREADS;
+create table  rp6._01_(compress= yes) as
+		select distinct id, period, BRAND_ENG_NAME, DEPT_ENG_DESC, SUBDEPT_ENG_DESC, a.*
+		from rp6._000_ a 
+		left join topsrst.d_merchandise b
+		on pr_code = product_code
+	;
+QUIT;
+
+
+PROC SQL THREADS;
+create table rp6._02_(compress= yes) as
+		select distinct a.id, period, store_format, BRAND_ENG_NAME as brand, DEPT_ENG_DESC, SUBDEPT_ENG_DESC, barcode as coupon_no,
+					count(distinct sbl_member_id) as sbl_Member_id,
+					Count(distinct reference!!store_id!!trn_dte) AS ref,
+					sum(total) as total,
+					sum(gp) as gp, 
+					sum(net_total) as net_total,
+					sum(qty) as qty
+		from rp6._000_ a 
+		left join topsrst.d_merchandise 
+		on pr_code = product_code
+		left join rp6.BARCODE_PRODUCT 
+		on a.Pr_code = 'Product Barcode'n
+		where STORE_FORMAT in ('Central Food Hall', 'TOPS MARKET')
+		group by a.id, period, store_format, brand, barcode
+	;
+QUIT;
+
+PROC SQL THREADS;
+create table rp6._02_t(compress= yes) as
+		select distinct a.id, period, '__total' as store_format, '_total' as brand, 'total' as SUBDEPT_ENG_DESC, 'Total' as coupon_no,
+					count(distinct sbl_member_id) as sbl_Member_id,
+					Count(distinct reference!!store_id!!trn_dte) AS ref,
+					sum(total) as total,
+					sum(gp) as gp, 
+					sum(net_total) as net_total,
+					sum(qty) as qty
+		from rp6._000_ a 
+		left join topsrst.d_merchandise 
+		on pr_code = product_code
+		left join rp6.BARCODE_PRODUCT 
+		on a.Pr_code = 'Product Barcode'n
+		where STORE_FORMAT in ('Central Food Hall', 'TOPS MARKET')
+		group by a.id, period, store_format, brand, coupon_no
+	;
+QUIT;
+
+
+
+
+/*by store format by product*/
+PROC SQL THREADS;
+create table  rp6._02_P(compress= yes) as
+		select distinct a.id, period, store_format, BRAND_ENG_NAME as brand, DEPT_ENG_DESC, SUBDEPT_ENG_DESC, 
+Product_code, Product_eng_Desc, barcode as coupon_no,
+					count(distinct sbl_member_id) as sbl_Member_id,
+					Count(distinct reference!!store_id!!trn_dte) AS ref,
+					sum(total) as total,
+					sum(gp) as gp, 
+					sum(net_total) as net_total,
+					sum(qty) as qty
+		from rp6._000_ a 
+		left join topsrst.d_merchandise 
+		on pr_code = product_code
+		left join rp6.BARCODE_PRODUCT 
+		on a.Pr_code = 'Product Barcode'n
+		where STORE_FORMAT in ('Central Food Hall', 'TOPS MARKET')
+		group by a.id, period, store_format, BRAND_ENG_NAME, brand, DEPT_ENG_DESC, SUBDEPT_ENG_DESC, Product_code, Product_eng_Desc
+	;
+QUIT;
+
+
+PROC SQL THREADS;
+create table  rp6._02_P_t(compress= yes) as
+		select distinct a.id, period,store_format, '__total' as brand, '_total' as DEPT_ENG_DESC, 'total' as SUBDEPT_ENG_DESC, 
+'total' as Product_code, 'total' as Product_eng_Desc, 'Total' as coupon_no,
+					count(distinct sbl_member_id) as sbl_Member_id,
+					Count(distinct reference!!store_id!!trn_dte) AS ref,
+					sum(total) as total,
+					sum(gp) as gp, 
+					sum(net_total) as net_total,
+					sum(qty) as qty
+		from rp6._000_ a 
+		left join topsrst.d_merchandise 
+		on pr_code = product_code
+		left join rp6.BARCODE_PRODUCT 
+		on a.Pr_code = 'Product Barcode'n
+		where STORE_FORMAT in ('Central Food Hall', 'TOPS MARKET')
+		group by a.id,period, store_format
+	;
+QUIT;
+
+
+
+
+
+
+/*redeem*/
+PROC SQL THREADS;
+create table rp6.REDEEM_0(compress= yes) as
+	select distinct *
+	from Topsrst.CPN9_DAILY
+	where COUPON_NO in (select 'Barcode'n from rp6.BARCODE_PRODUCT)
+	;
+QUIT;
+
+data rp6.REDEEM_0 (drop=SEQ_NO)/*(drop=rec)*/;
+set rp6.REDEEM_0  ;
+run;
+
+PROC SQL THREADS;
+create table rp6.REDEEM_0(compress= yes) as
+	select distinct *
+	from rp6.REDEEM_0
+	;
+QUIT;
+
+
+/*
+data rp6.REDEEM_0 (drop=rec);
+	set rp6.REDEEM;
+run;*/
+
+PROC SQL THREADS;
+create table rp6.REDEEM_(compress= yes) as
+		select  a.*,b.id,point,redeem_price, /*FDS_SALES*/ round(discount/Redeem_price) as qnt_f
+		from rp6.REDEEM_0 a 
+		left join rp6.BARCODE_PRODUCT b
+		on  pr_code/*pcd */= 'Product Barcode'n 
+				and COUPON_NO = b.'Barcode'n
+	;
+QUIT;
+
+PROC SQL THREADS;
+create table rp6._03_(compress= yes) as
+		select distinct b.*,a.*,qnt_f,qnt_f*point as point_
+		from  rp6.REDEEM_ b 
+		left join rp6._000_ a
+		on reference = RCPT_NO/*ref */
+			and store_id = STORE_CODE /*brn*/ 
+			and a.pr_code = b.pr_code/*pcd */
+			and a.id = b.id
+			and trn_dte =  TRANS_DATE
+/*			input(ttm,8.)*/
+/*	input(put(year(TTM),4.)!!put(month(TTM),z2.)!!put(day(TTM),z2.),8.)*/
+/*	input(put(datepart(ttm),yymmddn8.),8.)*/
+
+	and a.period = 'Period'
+	;
+QUIT;
+
+
+/*PROC SQL THREADS;*/
+/*CREATE TABLE rp6._03_Pre(compress= yes) as*/
+/*SELECT distinct b.*,a.**/
+/**/
+/*FROM  rp6.REDEEM_ b left join rp6._00_ a*/
+/*on a.pr_code = b.pr_code*/
+/**/
+/**/
+/**/
+/*where a.period = 'Previous'*/
+/*and trn_dte <= '20230912'*/
+/*;*/
+/*QUIT;*/
+
+
+
+/*For tracking SKUs*/
+PROC SQL THREADS;
+create table rp6._04_P (compress= yes) as
+		select distinct id, 'Redeem' as Period, BRAND_ENG_NAME as brand, DEPT_ENG_DESC, SUBDEPT_ENG_DESC, store_format, Coupon_no, 
+Product_code, Product_eng_Desc,
+					count(distinct sbl_member_id) as sbl_Member_id,
+					Count(distinct reference!!store_id!!trn_dte) AS ref,
+					sum(total) as total,
+					sum(gp) as gp, 
+					sum(net_total) as net_total,
+					sum(amt) as amt,
+					0 as fds, 
+					sum(qnt_f) as qty,
+					sum(TOT_AMT) as TOT_AMT, 
+					sum(discount/*FDS_SALES*/) as FDS_SALES, 
+					0/*sum(FDS_T1C)*/ as FDS_T1C,
+					sum(point_) as point
+		from rp6._03_ 
+		left join topsrst.d_merchandise 
+		on pr_code = product_code
+		where store_code is not null
+		and store_format is not null
+		group by id, brand, DEPT_ENG_DESC, SUBDEPT_ENG_DESC, store_format, Coupon_no, Product_code, Product_eng_Desc
+	;
+QUIT;
+
+
+PROC SQL THREADS;
+create table rp6._04_P_t (compress= yes) as
+		select distinct id, 'Redeem' as Period, '_total' as brand ,'total' as DEPT_ENG_DESC, 'total' as SUBDEPT_ENG_DESC, 
+'total' as Product_code, 'total' as Product_eng_Desc, store_format, 'total' as Coupon_no,
+					count(distinct sbl_member_id) as sbl_Member_id,
+					Count(distinct reference!!store_id!!trn_dte) AS ref,
+					sum(total) as total,
+					sum(gp) as gp, 
+					sum(net_total) as net_total,
+					sum(amt) as amt,0 /*sum(fds)*/ as fds, 
+					sum(qnt_f) as qty,
+					sum(TOT_AMT) as TOT_AMT, 
+					sum(discount/*FDS_SALES*/) as FDS_SALES, 
+					0/*sum(FDS_T1C)*/ as FDS_T1C,
+					sum(point_) as point
+		from rp6._03_ left join topsrst.d_merchandise on pr_code = product_code
+		where store_code is not null
+		and store_format is not null
+		group by id, store_format
+	;
+QUIT;
+
+
+data rp6._05_P(compress= yes);
+	set rp6._02_P
+	    rp6._02_P_t
+		rp6._04_P
+		rp6._04_P_t
+;
+run;
+
+
+/*
+PROC EXPORT DATA= rp6._05_P
+            OUTFILE= "E:\Pu\Export_SAS\Redeem1Baht\D_05_product.txt" 
+            DBMS=DLM REPLACE;
+     DELIMITER='7C'x; 
+     PUTNAMES=YES;
+RUN;
+*/
+
+
+
+
+
+/*For tracking store*/
+PROC SQL THREADS;
+create table  rp6._02_S(compress= yes) as
+		select distinct a.id, period, store_format, store_id, store_name, BRAND_ENG_NAME as brand, DEPT_ENG_DESC, SUBDEPT_ENG_DESC, 
+Product_code, Product_eng_Desc, barcode as coupon_no,
+					count(distinct sbl_member_id) as sbl_Member_id,
+					Count(distinct reference!!store_id!!trn_dte) AS ref,
+					sum(total) as total,
+					sum(gp) as gp, 
+					sum(net_total) as net_total,
+					sum(qty) as qty
+		from rp6._000_ a 
+		left join topsrst.d_merchandise 
+		on pr_code = product_code
+		left join rp6.BARCODE_PRODUCT 
+		on a.Pr_code = 'Product Barcode'n
+		where STORE_FORMAT in ('Central Food Hall', 'TOPS MARKET')
+		group by a.id, period, store_format, store_id, store_name, brand, DEPT_ENG_DESC, SUBDEPT_ENG_DESC, Product_code, Product_eng_Desc
+	;
+QUIT;
+
+
+PROC SQL THREADS;
+create table  rp6._02_S_t(compress= yes) as
+		select distinct a.id, period,store_format, store_id, store_name, '__total' as brand, '_total' as DEPT_ENG_DESC, 'total' as SUBDEPT_ENG_DESC, 
+'total' as Product_code, 'total' as Product_eng_Desc, 'Total' as coupon_no,
+					count(distinct sbl_member_id) as sbl_Member_id,
+					Count(distinct reference!!store_id!!trn_dte) AS ref,
+					sum(total) as total,
+					sum(gp) as gp, 
+					sum(net_total) as net_total,
+					sum(qty) as qty
+		from rp6._000_ a 
+		left join topsrst.d_merchandise 
+		on pr_code = product_code
+		left join rp6.BARCODE_PRODUCT 
+		on a.Pr_code = 'Product Barcode'n
+		where STORE_FORMAT in ('Central Food Hall', 'TOPS MARKET')
+		group by a.id,period, store_format, store_id, store_name
+	;
+QUIT;
+
+
+PROC SQL THREADS;
+create table rp6._04_S(compress= yes) as
+		select distinct id, 'Redeem' as Period, store_format, store_id, store_name, Coupon_no, 
+Product_code, Product_eng_Desc, BRAND_ENG_NAME as brand, DEPT_ENG_DESC, SUBDEPT_ENG_DESC,
+					count(distinct sbl_member_id) as sbl_Member_id,
+					Count(distinct reference!!store_id!!trn_dte) AS ref,
+					sum(total) as total,
+					sum(gp) as gp, 
+					sum(net_total) as net_total,
+					sum(amt) as amt,
+					0 as fds, 
+					sum(qnt_f) as qty,
+					sum(TOT_AMT) as TOT_AMT, 
+					sum(discount/*FDS_SALES*/) as total_dis, 
+					sum(point_) as point
+		from rp6._03_ 
+		left join topsrst.d_merchandise 
+		on pr_code = product_code
+		where store_code is not null
+		and store_format is not null
+		group by id, store_format, store_id, store_name, Coupon_no, Product_code, Product_eng_Desc, brand, DEPT_ENG_DESC, SUBDEPT_ENG_DESC
+	;
+QUIT;
+
+
+PROC SQL THREADS;
+create table rp6._04_S_t (compress= yes) as
+		select distinct id, 'Redeem' as Period, store_format, store_id, store_name, '__total' as brand, '_total' as DEPT_ENG_DESC, 
+'total' as SUBDEPT_ENG_DESC, 'total' as Product_code, 'total' as Product_eng_Desc, 'total' as Coupon_no,
+					count(distinct sbl_member_id) as sbl_Member_id,
+					Count(distinct reference!!store_id!!trn_dte) AS ref,
+					sum(total) as total,
+					sum(gp) as gp, 
+					sum(net_total) as net_total,
+					sum(amt) as amt,0 /*sum(fds)*/ as fds, 
+					sum(qnt_f) as qty,
+					sum(TOT_AMT) as TOT_AMT, 
+					sum(discount/*FDS_SALES*/) as total_dis, 
+					sum(point_) as point
+		from rp6._03_ left join topsrst.d_merchandise on pr_code = product_code
+		where store_code is not null
+		and store_format is not null
+		group by id, store_format, store_id
+	;
+QUIT;
+
+
+data rp6._05_S(compress= yes);
+	set rp6._02_S
+	    rp6._02_S_t
+		rp6._04_S
+		rp6._04_S_t
+;
+run;
+
+
+
+
+
+
+/*by store*/
+PROC SQL THREADS;
+create table rp6._06_store(compress= yes) as
+	select distinct id, 'Total' as store_id, put('Total',$80.) as STORE_NAME, put('Total',$80.) as STORE_Format, trn_dte,
+				count(distinct sbl_member_id) as sbl_Member_id,
+				Count(distinct reference!!store_id!!trn_dte) AS ref,
+				sum(total) as total,
+				sum(gp) as gp, 
+				sum(net_total) as net_total,
+				sum(amt) as amt,
+				0 /*sum(fds)*/ as fds, 
+				sum(qnt_f) as qty,
+				sum(TOT_AMT) as TOT_AMT, 
+				sum(discount/*FDS_SALES*/) as FDS_SALES, 
+				0/*sum(FDS_T1C)*/ as FDS_T1C,
+				sum(point*qnt_f) as point_redeem
+	from rp6._03_ 
+	where store_code is not null
+	group by  id, trn_dte
+	;
+QUIT;
+
+
+PROC SQL THREADS;
+create table rp6._06_store_t(compress= yes) as
+	select distinct id, 'Total' as store_id, put('Total',$80.) as STORE_NAME, put('Total',$80.) as STORE_Format, '0' as trn_dte,
+				count(distinct sbl_member_id) as sbl_Member_id,
+				Count(distinct reference!!store_id!!trn_dte) AS ref,
+				sum(total) as total,
+				sum(gp) as gp, 
+				sum(net_total) as net_total,
+				sum(amt) as amt,
+				0 /*sum(fds)*/ as fds, 
+				sum(qnt_f) as qty,
+				sum(TOT_AMT) as TOT_AMT, 
+				sum(discount/*FDS_SALES*/) as FDS_SALES, 
+				0/*sum(FDS_T1C)*/ as FDS_T1C,
+				sum(point*qnt_f) as point_redeem
+
+	from rp6._03_ a left join topsrst.d_store b on a.store_code = b.store_code
+	where a.store_code is not null
+	group by id
+	;
+QUIT;
+
+PROC SQL THREADS;
+create table rp6._06_store_t2(compress= yes) as 
+	select distinct id, store_id, a.STORE_NAME, a.STORE_Format, '0' as trn_dte,
+				count(distinct sbl_member_id) as sbl_Member_id,
+				Count(distinct reference!!store_id!!trn_dte) AS ref,
+				sum(total) as total,
+				sum(gp) as gp, 
+				sum(net_total) as net_total,
+				sum(amt) as amt,
+				0 /*sum(fds)*/ as fds, 
+				sum(qnt_f) as qty,
+				sum(TOT_AMT) as TOT_AMT, 
+				sum(discount/*FDS_SALES*/) as FDS_SALES, 
+				0/*sum(FDS_T1C)*/ as FDS_T1C,
+				sum(point*qnt_f) as point_redeem
+	from rp6._03_ a 
+	left join topsrst.d_store b 
+	on a.store_code = b.store_code
+	where a.store_code is not null
+	group by id, store_id, a.STORE_NAME, a.STORE_Format
+	;
+QUIT;
+
+PROC SQL THREADS;
+create table rp6._06_store_t3(compress= yes) as
+		select distinct id, store_id, a.STORE_NAME, a.STORE_Format, trn_dte,
+			count(distinct sbl_member_id) as sbl_Member_id,
+			Count(distinct reference!!store_id!!trn_dte) AS ref,
+			sum(total) as total,
+			sum(gp) as gp, 
+			sum(net_total) as net_total,
+			sum(amt) as amt,
+			0 /*sum(fds)*/ as fds, 
+			sum(qnt_f) as qty,
+			sum(TOT_AMT) as TOT_AMT, 
+			sum(discount/*FDS_SALES*/) as FDS_SALES, 
+			0/*sum(FDS_T1C)*/ as FDS_T1C,
+			sum(point*qnt_f) as point_redeem
+
+		from rp6._03_ a 
+		left join topsrst.d_store b 
+		on a.store_code = b.store_code
+		where a.store_code is not null
+		group by id,store_id, a.STORE_NAME , a.STORE_Format, trn_dte
+	;
+QUIT;
+
+
+data rp6._06_store_v2 (compress= yes);
+	set rp6._06_store
+		rp6._06_store_t
+        rp6._06_store_t2
+		rp6._06_store_t3
+;
+run;
+
+
+/*
+PROC EXPORT DATA= rp6._06_store
+            OUTFILE= "E:\Pu\Export_SAS\Redeem1Baht\D_06_store.txt" 
+            DBMS=DLM REPLACE;
+     DELIMITER='7C'x; 
+     PUTNAMES=YES;
+RUN;
+
+*/
+
+
+
+
+/*by store group*/
+PROC SQL THREADS;
+create table rp6._08_store(compress= yes) as
+	select distinct id, 'Total' as store_id, put('Total',$80.) as STORE_NAME, put('Total',$80.) as STORE_Format,
+				count(distinct sbl_member_id) as sbl_Member_id,
+				Count(distinct reference!!store_id!!trn_dte) AS ref,
+				sum(total) as total,
+				sum(gp) as gp, 
+				sum(net_total) as net_total,
+				sum(amt) as amt,
+				0 /*sum(fds)*/ as fds, 
+				sum(qnt_f) as qty,
+				sum(TOT_AMT) as TOT_AMT, 
+				sum(discount/*FDS_SALES*/) as FDS_SALES, 
+				0/*sum(FDS_T1C)*/ as FDS_T1C,
+				sum(point*qnt_f) as point_redeem
+	from rp6._03_ 
+	where store_code is not null
+	group by  id
+	;
+QUIT;
+
+
+PROC SQL THREADS;
+create table rp6._08_store_t(compress= yes) as
+	select distinct id, store_id, a.STORE_NAME, a.STORE_Format,
+				count(distinct sbl_member_id) as sbl_Member_id,
+				Count(distinct reference!!store_id!!trn_dte) AS ref,
+				sum(total) as total,
+				sum(gp) as gp, 
+				sum(net_total) as net_total,
+				sum(amt) as amt,
+				0 /*sum(fds)*/ as fds, 
+				sum(qnt_f) as qty,
+				sum(TOT_AMT) as TOT_AMT, 
+				sum(discount/*FDS_SALES*/) as FDS_SALES, 
+				0/*sum(FDS_T1C)*/ as FDS_T1C,
+				sum(point*qnt_f) as point_redeem
+	from rp6._03_ a 
+	left join topsrst.d_store b 
+	on a.store_code = b.store_code
+	where a.store_code is not null
+	group by id, store_id, a.STORE_NAME, a.STORE_Format
+	;
+QUIT;
+
+
+data rp6._08_store_v2 (compress= yes);
+	set rp6._08_store
+		rp6._08_store_t
+;
+run;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*summary by store & item*/
+
+proc sql;
+	create table rp6._07_store_item as
+	select distinct id, store_id, STORE_NAME, STORE_Format, pr_code, product_eng_desc,
+/*			count(distinct sbl_member_id) as sbl_Member_id,*/
+/*			count(distinct reference!!store_id!!put(trn_dte,8.))AS ref,*/
+			sum(total) as total,
+			sum(gp) as gp, 
+			sum(net_total) as net_total,
+			sum(amt) as amt,
+			sum(qnt_f) as qty,
+			sum(TOT_AMT) as TOT_AMT, 
+			sum(discount/*FDS_SALES*/) as FDS_SALES, 
+			sum(point*qnt_f) as point_redeem
+	from rp6._03_ as a, topsrst.d_store as b, topsrst.d_merchandise as c
+	where a.store_code = b.store_code
+				and a.pr_code = c.product_code
+				and a.store_code is not null
+	group by id, store_id, STORE_NAME, STORE_Format, pr_code, product_eng_desc
+	;
+quit;
+
+
+/*end*/
+
+/*-----------------------------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------------------------*/
+
+
+
+
