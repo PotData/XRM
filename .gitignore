@@ -1,2 +1,3 @@
+.dbeaver/credentials-config*
 .dbeaver/.configuration
 *.bak
