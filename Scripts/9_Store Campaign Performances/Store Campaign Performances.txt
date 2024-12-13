@@ -1,0 +1,532 @@
+/*Store Campaign Performances - Giveaway Premium*/
+
+options dlcreatedir;
+libname A5 'G:\Ton\Nanglyncgee_Premium_PH3\';
+
+
+
+
+
+/*Flag Member - NL*/
+proc sql threads;
+create table A5.Premium_TX_17Oct24_F (compress = yes) as
+select A.*, sbl_member_id
+from A5.Premium_TX_17Oct24 as A
+left join topssbl.sbl_member_card_list b 
+on A.t1c_card_no = B.t1c_card_no
+;
+quit;
+
+proc sql threads;
+create table A5.Premium_TX_17Oct24_sbl (compress = yes) as
+select distinct sbl_member_id
+from A5.Premium_TX_17Oct24_F as A
+where A.sbl_member_id is not null
+group by sbl_member_id
+;
+quit;
+
+proc sql threads;
+create table A5.Premium_TX_17Oct24_F_sumv (compress = yes) as
+select sum(Premium_Qty) as Premium_Qty, sum(Premium_Qty*249) as Prem_Value
+from A5.Premium_TX_17Oct24_F as A
+;
+quit;
+
+
+
+
+/*Eligible Tx*/
+/*TY*/
+%MACRO EXECUTE_SALE_TRANS_All_Vou(yyyymm);
+proc sql;
+	create table A5.NL_All_Prem_TY_&yyyymm as
+	select distinct B.store_code, B.store_name, A.sbl_member_id,
+	            A.ref_key,
+                sum(qty) as quant_ty,
+				sum(total) as total_ty, sum(net_total) as net_total_ty, sum(GP) as GP_ty,
+                'NL' as BU
+	from Topst1c.SALES_PROMOTION_COMP_&yyyymm as A, Topsrst.d_store as B
+	where A.store_id = B.store_code
+	and A.store_id in ('055')
+	and trn_dte between '20241001' and '20241017'
+	group by B.store_code, B.store_name, A.sbl_member_id, A.ref_key
+	;
+quit;
+%MEND;
+
+OPTIONS mprint;
+%EXECUTE_SALE_TRANS_All_Vou(202410)
+;
+
+data A5.NL_All_Prem_TY;
+set A5.NL_All_Prem_TY_202410
+;
+run;
+
+proc sql;
+create table A5.NL_All_Prem_TY_f (compress = yes) as
+select A.*,
+
+case when total_ty <1500 then 'T1_<1500' 
+when total_ty >=1500 then 'T2_>=1500'
+end as Tx_range,
+
+case when A.sbl_member_id is not null 
+and sbl_member_id not in ('9-014342304','9-014223414','9-014511211','9-014493473','9-014234126','9-014651449','9999999999')
+Then '01_Member' else '02_Non_member' end as Flag_member
+
+from A5.NL_All_Prem_TY as A
+
+;
+quit;
+
+proc sql;
+create table A5.NL_All_Prem_TY_f_c_m (compress = yes) as
+select distinct Flag_member, Tx_range, count(distinct sbl_member_id) as No_id, count(distinct ref_key) as tx_ty, 
+                 		sum(total_ty)as total_ty, 
+						sum(net_total_ty) as net_total_ty,
+                 		sum(GP_ty) as gp_ty, sum(QUANT_ty) as quant_ty
+from A5.NL_All_Prem_TY_f as A
+where Flag_member in ('01_Member')
+group by Flag_member, Tx_range
+;
+quit;
+
+
+proc sql;
+create table A5.NL_All_Prem_TY_card (compress = yes) as
+select distinct Flag_member, count(distinct sbl_member_id) as No_id, count(distinct ref_key) as tx_ty, 
+                 		sum(total_ty)as total_ty, 
+						sum(net_total_ty) as net_total_ty,
+                 		sum(GP_ty) as gp_ty, sum(QUANT_ty) as quant_ty
+from A5.NL_All_Prem_TY_f as A
+where Flag_member in ('01_Member')
+group by Flag_member
+;
+quit;
+
+/*Eligible*/
+proc sql;
+create table A5.NL_Eli_Prem_TY_card (compress = yes) as
+select distinct Flag_member, count(distinct sbl_member_id) as No_id, count(distinct ref_key) as tx_ty, 
+                 		sum(total_ty)as total_ty, 
+						sum(net_total_ty) as net_total_ty,
+                 		sum(GP_ty) as gp_ty, sum(QUANT_ty) as quant_ty
+from A5.NL_All_Prem_TY_f as A
+where Flag_member in ('01_Member')
+and Tx_range in ('T2_>=1500')
+group by Flag_member
+;
+quit;
+
+
+
+
+
+
+
+/*PP*/
+%MACRO EXECUTE_SALE_TRANS_ALL(yyyymm);
+proc sql;
+	create table A5.NL_All_Prem_PP_&yyyymm as
+	select distinct B.store_code, B.store_name, A.sbl_member_id,
+	            A.ref_key,
+                sum(qty) as quant_PP,
+				sum(total) as total_PP, sum(net_total) as net_total_PP, sum(GP) as GP_PP,
+                'NL' as BU
+	from Topst1c.SALES_PROMOTION_COMP_&yyyymm as A, Topsrst.d_store as B
+	where A.store_id = B.store_code
+	and A.store_id in ('055')
+	and trn_dte between '20240506' and '20240522'
+	group by B.store_code, B.store_name, A.sbl_member_id, A.ref_key
+	;
+quit;
+%MEND;
+
+OPTIONS mprint;
+%EXECUTE_SALE_TRANS_ALL(202405)
+;
+
+data A5.NL_All_Prem_PP;
+set 
+A5.NL_All_Prem_PP_202405
+;
+run;
+
+
+
+proc sql;
+create table A5.NL_All_Prem_PP_f (compress = yes) as
+select A.*,
+
+case when total_PP <1500 then 'T1_<1500' 
+when total_PP >=1500 then 'T2_>=1500'
+end as Tx_range,
+
+case when A.sbl_member_id is not null 
+and sbl_member_id not in ('9-014342304','9-014223414','9-014511211','9-014493473','9-014234126','9-014651449','9999999999')
+Then '01_Member' else '02_Non_member' end as Flag_member
+
+from A5.NL_All_Prem_PP as A
+
+;
+quit;
+
+proc sql;
+create table A5.NL_All_Prem_PP_f_c_m (compress = yes) as
+select distinct Flag_member, Tx_range, count(distinct sbl_member_id) as No_id, count(distinct ref_key) as tx_PP, 
+                 		sum(total_PP)as total_PP, 
+						sum(net_total_PP) as net_total_PP,
+                 		sum(GP_PP) as gp_PP, sum(QUANT_PP) as quant_PP
+from A5.NL_All_Prem_PP_f as A
+where Flag_member in ('01_Member')
+group by Flag_member, Tx_range
+;
+quit;
+
+proc sql;
+create table A5.NL_All_Prem_PP_card (compress = yes) as
+select distinct Flag_member, count(distinct sbl_member_id) as No_id, count(distinct ref_key) as tx_PP, 
+                 		sum(total_PP)as total_PP, 
+						sum(net_total_PP) as net_total_PP,
+                 		sum(GP_PP) as gp_PP, sum(QUANT_PP) as quant_PP
+from A5.NL_All_Prem_PP_f as A
+where Flag_member in ('01_Member')
+group by Flag_member
+;
+quit;
+
+/*Eligible*/
+proc sql;
+create table A5.NL_Eli_Prem_PP_card (compress = yes) as
+select distinct Flag_member, count(distinct sbl_member_id) as No_id, count(distinct ref_key) as tx_PP, 
+                 		sum(total_PP)as total_PP, 
+						sum(net_total_PP) as net_total_PP,
+                 		sum(GP_PP) as gp_PP, sum(QUANT_PP) as quant_PP
+from A5.NL_All_Prem_PP_f as A
+where Flag_member in ('01_Member')
+and Tx_range in ('T2_>=1500')
+group by Flag_member
+;
+quit;
+
+
+
+
+
+data A5.NL_All_Prem_TYPP_m;
+set A5.NL_All_Prem_TY_f_c_m
+A5.NL_All_Prem_PP_f_c_m
+;
+run;
+
+
+
+
+
+
+/*Parti tickets*/
+/*NL - Parti cust Sales*/
+/*TY*/
+%MACRO EXECUTE_SALE_TRANS_ALL(yyyymm);
+proc sql;
+	create table A5.NL_Partx_TY_&yyyymm as
+	select distinct B.store_code, B.store_name, A.store_id, A.reference, A.Trn_dte, A.ref_key, A.sbl_member_id,
+                sum(qty) as quant_ty,
+				sum(total) as total_ty, sum(net_total) as net_total_ty, sum(GP) as GP_ty,
+                'NL' as BU
+	from Topst1c.SALES_PROMOTION_COMP_&yyyymm as A, Topsrst.d_store as B
+	where A.store_id = B.store_code
+	and A.reference in (select reference from A5.Premium_TX_17Oct24_F)
+	and trn_dte between '20241001' and '20241017'
+	and store_id in ('055')
+	and sbl_member_id is not null 
+    and sbl_member_id not in ('9-014342304','9-014223414','9-014511211','9-014493473','9-014234126','9-014651449') 
+	group by B.store_code, B.store_name, A.store_id, A.reference, A.Trn_dte, A.ref_key, A.sbl_member_id
+	;
+quit;
+%MEND;
+
+OPTIONS mprint;
+%EXECUTE_SALE_TRANS_ALL(202410)
+;
+
+data A5.NL_Partx_TY;
+set A5.NL_Partx_TY_202410
+;
+run;
+
+proc sql;
+create table A5.NL_Partx_TY_c (compress = yes) as
+select distinct store_code, store_name, count(distinct sbl_member_id) as No_id, count(distinct ref_key) as tx_ty, 
+                 		sum(total_ty)as total_ty, 
+						sum(net_total_ty) as net_total_ty,
+                 		sum(GP_ty) as gp_ty, sum(QUANT_ty) as quant_ty
+from A5.NL_Partx_TY as L
+group by store_code, store_name
+;
+quit;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*NL - Parti cust Sales*/
+proc sql;
+create table A5.PARTI_NL_Prem_sbl (compress = yes) as
+select distinct sbl_member_id, sum(Premium_Qty*249) as Prem_Value
+from A5.Premium_TX_17Oct24_F as L
+where sbl_member_id is not null 
+and sbl_member_id not in ('9-014342304','9-014223414','9-014511211','9-014493473','9-014234126','9-014651449')
+group by sbl_member_id
+;
+quit;
+
+
+
+/*TY*/
+%MACRO EXECUTE_SALE_TRANS_ALL(yyyymm);
+proc sql;
+	create table A5.NL_Parti_Prem_TY_&yyyymm as
+	select distinct B.store_code, B.store_name, A.sbl_member_id,
+	            count(distinct ref_key) as Tx_ty,
+                sum(qty) as quant_ty,
+				sum(total) as total_ty, sum(net_total) as net_total_ty, sum(GP) as GP_ty,
+                'NL' as BU
+	from Topst1c.SALES_PROMOTION_COMP_&yyyymm as A, Topsrst.d_store as B, A5.PARTI_NL_Prem_sbl as C
+	where A.store_id = B.store_code
+	and A.sbl_member_id = C.sbl_member_id
+	and A.store_id in ('055')
+	and trn_dte between '20241001' and '20241017'
+	group by B.store_code, B.store_name, A.sbl_member_id
+	;
+quit;
+%MEND;
+
+OPTIONS mprint;
+%EXECUTE_SALE_TRANS_ALL(202410)
+;
+
+data A5.NL_Parti_Prem_TY;
+set A5.NL_Parti_Prem_TY_202410
+;
+run;
+
+
+
+proc sql;
+create table A5.NL_Parti_Prem_TY_c (compress = yes) as
+select distinct store_code, store_name, count(distinct sbl_member_id) as No_id, sum(tx_ty) as tx_ty, 
+                 		sum(total_ty)as total_ty, 
+						sum(net_total_ty) as net_total_ty,
+                 		sum(GP_ty) as gp_ty, sum(QUANT_ty) as quant_ty
+from A5.NL_Parti_Prem_TY as A
+group by store_code, store_name
+;
+quit;
+
+proc sql;
+create table A5.NL_Parti_Prem_TY_card (compress = yes) as
+select distinct store_code, store_name, sbl_member_id, sum(tx_ty) as tx_ty, 
+                 		sum(total_ty)as total_ty, 
+						sum(net_total_ty) as net_total_ty,
+                 		sum(GP_ty) as gp_ty, sum(QUANT_ty) as quant_ty
+from A5.NL_Parti_Prem_TY as A
+group by store_code, store_name, sbl_member_id
+;
+quit;
+
+
+
+
+
+
+/*PP*/
+%MACRO EXECUTE_SALE_TRANS_ALL(yyyymm);
+proc sql;
+	create table A5.NL_Parti_Prem_PP_&yyyymm as
+	select distinct B.store_code, B.store_name, A.sbl_member_id,
+	            count(distinct ref_key) as Tx_PP,
+                sum(qty) as quant_PP,
+				sum(total) as total_PP, sum(net_total) as net_total_PP, sum(GP) as GP_PP,
+                'NL' as BU
+	from Topst1c.SALES_PROMOTION_COMP_&yyyymm as A, Topsrst.d_store as B, A5.NL_Parti_Prem_TY_card as C
+	where A.store_id = B.store_code
+	and A.sbl_member_id = C.sbl_member_id
+	and A.store_id in ('055')
+	and trn_dte between '20240506' and '20240522'
+	group by B.store_code, B.store_name, A.sbl_member_id
+	;
+quit;
+%MEND;
+
+OPTIONS mprint;
+%EXECUTE_SALE_TRANS_ALL(202405)
+;
+
+data A5.NL_Parti_Prem_PP;
+set 
+A5.NL_Parti_Prem_PP_202405
+;
+run;
+
+proc sql;
+create table A5.NL_Parti_Prem_PP_c (compress = yes) as
+select distinct  count(distinct sbl_member_id) as No_id, sum(tx_PP) as tx_PP, 
+                 		sum(total_PP)as total_PP, 
+						sum(net_total_PP) as net_total_PP,
+                 		sum(GP_PP) as gp_PP, sum(QUANT_PP) as quant_PP
+from A5.NL_Parti_Prem_PP as L
+;
+quit;
+
+proc sql;
+create table A5.NL_Parti_Prem_PP_c (compress = yes) as
+select distinct store_code, store_name, count(distinct sbl_member_id) as No_id, sum(tx_PP) as tx_PP, 
+                 		sum(total_PP)as total_PP, 
+						sum(net_total_PP) as net_total_PP,
+                 		sum(GP_PP) as gp_PP, sum(QUANT_PP) as quant_PP
+from A5.NL_Parti_Prem_PP as L
+group by store_code, store_name
+;
+quit;
+
+proc sql;
+create table A5.NL_Parti_Prem_PP_card (compress = yes) as
+select distinct store_code, store_name, sbl_member_id, sum(tx_PP) as tx_PP, 
+                 		sum(total_PP)as total_PP, 
+						sum(net_total_PP) as net_total_PP,
+                 		sum(GP_PP) as gp_PP, sum(QUANT_PP) as quant_PP
+from A5.NL_Parti_Prem_PP as L
+group by store_code, store_name, sbl_member_id
+;
+quit;
+
+
+
+
+
+/*Map Parti Card by Premium - Sales*/
+proc sql;
+create table A5.NL_PARTI_Prem_TYPP as
+select distinct A.*,
+tx_pp,
+total_pp,
+net_total_pp,
+gp_pp,
+quant_pp
+from A5.NL_PARTI_Prem_TY_CARD as A
+left join A5.NL_PARTI_Prem_PP_CARD as B
+on A.sbl_member_id = B.sbl_member_id
+group by A.sbl_member_id
+;
+quit;
+
+proc sql;
+create table A5.NL_PARTI_Prem_TYPP_f as 
+select distinct A.*, 
+
+case when tx_pp is null then '02_NEW'
+when tx_pp is not null then '01_EXS'
+end as Cust_type
+
+from A5.NL_PARTI_Prem_TYPP as A
+group by sbl_member_id
+;
+quit;
+
+
+proc sql;
+create table A5.NL_PARTI_Prem_TYPP_f_c as
+select distinct Cust_type,
+count(distinct sbl_member_id) as no_id,
+		sum(tx_ty) as tx_ty,
+        sum(total_ty) as total_ty,
+		sum(net_total_ty) as net_total_ty,
+		sum(gp_ty) as gp_ty,
+		sum(quant_ty) as quant_ty, 
+
+		sum(tx_pp) as tx_pp,
+        sum(total_pp) as total_pp,
+		sum(net_total_pp) as net_total_pp,
+		sum(gp_pp) as gp_pp,
+		sum(quant_pp) as quant_pp
+from A5.NL_PARTI_Prem_TYPP_f as A
+group by Cust_type
+;
+quit;
+
+
+
+
+
+
+
+
+
+/*New Register*/
+/*New Register*/
+proc sql;
+create table A5.new_Regist_Y24 (compress=yes) as
+select distinct a.sbl_member_id,input(put(datepart(REGISTER_DATE),yymmddn8.),8.) as regis_date, REGISTER_BU,'regis24' as regis
+from topssbl.sbl_customer a
+having regis_date between 20241001 and 20241017
+;
+quit;
+
+
+
+proc sql;
+create table A5.NL_PARTI_Prem_TYPP_f2 as
+select distinct A.*, regis, REGISTER_BU
+from A5.NL_PARTI_Prem_TYPP_f as A
+left join A5.new_Regist_Y24 as B
+on A.sbl_member_id = B.sbl_member_id
+group by A.sbl_member_id
+;
+quit;
+
+
+proc sql;
+create table A5.NL_PARTI_Prem_TYPP_f3 as 
+select distinct A.*, 
+
+case when Cust_type in ('02_NEW') and regis in ('regis24') then '03_NewRe'
+when Cust_type in ('02_NEW') and regis not in ('regis24') then '02_React'
+else '01_EXS' end as Cust_type2
+
+from A5.NL_PARTI_Prem_TYPP_f2 as A
+
+;
+quit;
+
+proc sql;
+create table A5.NL_PARTI_Prem_TYPP_f3_c as
+select distinct Cust_type2,
+count(distinct sbl_member_id) as no_id,
+		sum(tx_ty) as tx_ty,
+        sum(total_ty) as total_ty,
+		sum(net_total_ty) as net_total_ty,
+		sum(gp_ty) as gp_ty,
+		sum(quant_ty) as quant_ty, 
+
+		sum(tx_pp) as tx_pp,
+        sum(total_pp) as total_pp,
+		sum(net_total_pp) as net_total_pp,
+		sum(gp_pp) as gp_pp,
+		sum(quant_pp) as quant_pp
+from A5.NL_PARTI_Prem_TYPP_f3 as A
+group by Cust_type2
+;
+quit;
