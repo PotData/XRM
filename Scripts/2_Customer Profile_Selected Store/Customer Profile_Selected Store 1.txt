@@ -1,0 +1,293 @@
+options dlcreatedir;
+libname A3 'G:\Ton\Store_A_profile_Aug24';
+
+
+
+
+/*Customer Profile - Selected Store - Example for Atore A*/
+/*Store A*/
+%MACRO EXECUTE_SALE_TRANS_ALL(yyyymm);
+          PROC SQL threads;
+		  CREATE TABLE A3.Store_A_&yyyymm (compress = yes) AS
+          SELECT distinct &yyyymm as period, A.sbl_member_id, trn_dte, ref_key, B.subdept_code, B.subdept_eng_desc,
+						sum(A.QTY) as quant, 
+                 		sum(A.total)as total, 
+						sum(A.net_total) as net_total,
+                 		sum(A.GP) as gp, C.store_name as Site
+          FROM Topst1c.SALES_PROMOTION_COMP_&yyyymm as A, topsrst.d_merchandise as B, topsrst.d_store as C
+          where A.pr_code = B.product_code
+		  and A.store_id = C.store_code
+		  and (A.store_id in ('240'))  /*Change Store code*/
+		  and trn_dte between '20240801' and '20240828'
+		  group by site, period, A.sbl_member_id, trn_dte, ref_key, subdept_code, subdept_eng_desc
+          ;
+          QUIT;
+		  %MEND;
+
+OPTIONS mprint;
+%EXECUTE_SALE_TRANS_ALL(202408)
+;
+
+
+
+data A3.Store_A_sales;
+set 
+A3.Store_A_202408
+;
+run;
+
+
+/*mapping member*/
+proc sql;
+	create table A3.Store_A_sales_m (compress = yes) as
+	select distinct L.*
+	from A3.Store_A_sales as L
+	where sbl_member_id is not null 
+			and sbl_member_id not in ('9-014342304', '9-014223414',  '9-014511211', '9-014493473', '9-014234126', '9-014651449', '9999999999')
+	;
+quit;
+
+
+/*summary by period*/
+proc sql;
+	create table A3.Store_A_sales_m_period as
+	select distinct period, Site,
+				count(distinct sbl_member_id) as tc,
+				count(distinct ref_key) as tx, 
+				sum(quant) as quant, 
+				sum(total)as total, 
+				sum(GP) as gp, 
+				sum(net_total) as net_total,
+				sum(total)/count(distinct sbl_member_id) as spending_head,
+				sum(total)/count(distinct ref_key) as basket_size,
+				count(distinct ref_key)/count(distinct sbl_member_id) as freq
+	from A3.Store_A_sales_m
+	group by period, Site
+	;
+quit;
+
+/*summary total*/
+proc sql;
+	create table A3.Store_A_sales_m_sum1 as
+	select distinct Site, 
+				count(distinct sbl_member_id) as tc,
+				count(distinct ref_key) as tx, 
+				sum(quant) as quant, 
+				sum(total)as total, 
+				sum(GP) as gp, 
+				sum(net_total) as net_total
+	from A3.Store_A_sales_m
+	group by Site
+	;
+quit;
+
+proc sql;
+	create table A3.Store_A_sales_m_sum2 as
+	select  distinct Site,
+				avg(spending_head) as spending_head,
+				avg(basket_size) as basket_size,
+				avg(freq) as freq
+	from A3.Store_A_sales_m_period
+	group by Site
+	;
+quit;
+
+data A3.Store_A_sales_m_sum;
+merge A3.Store_A_sales_m_sum1 A3.Store_A_sales_m_sum2;
+by Site;
+run;
+
+
+/*-------------------  Profile  -------------------*/
+proc sql;
+	create table A3.Store_A_sbl as 
+	select distinct Site, sbl_member_id
+	from A3.Store_A_sales_m
+	;
+quit;
+
+/*Olympic All Segment CFG FY23*/
+proc sql;	
+	create table A3.Store_A_sbl_os (compress = yes) as 
+	select distinct a.*, hm_segment as olympic_cfg
+	from  A3.Store_A_sbl as a
+	left join CRM.OLYMPIC_CFG_FY23_NEW2 as b
+	on a.sbl_member_id = b.sbl_member_Id
+	;
+quit;
+
+/*Map Profile  - */
+proc sql threads;
+     create table A3.Store_A_sbl_os_p (compress=yes) as
+           select distinct a.*,
+                MARITALSTATUS   as MARITAL_STATUS,age,
+           case 
+                when age is null Then '99_Unknown'
+                when (age >= 0 and age <18) then  '00_<18'
+                when age <25 then  '01_18-24'
+                else Age_Range 
+           end as Age_Range,
+           case
+                when Gender = 'F' then '01_Female'
+                when Gender = 'M' then '02_Male'
+                else '00_Other' 
+           end as Gender,
+           Education_Level,
+           HH_Income as MTHLY_INCOME,
+           customer_type,
+           put(SEGMENT_no_gp_e,2.)!!'_'!!segment_gp_e as segment,
+           CFR_COMPANY_RANK,
+           CG_RANKING_2023,
+           CFG_Rank,
+           Generation,
+           KIDS_STAGE,
+           Occupation,
+           BEAUTY_LUXURY_SEGMENT,
+           BEAUTY_SEGMENT,
+           ELECTRONICS_LUXURY_SEGMENT,
+           FASHION_LUXURY_SEGMENT,
+           FOOD_LUXURY_SEGMENT,
+           PAYMENT_SEGMENT,
+           PET_LOVER_SEGMENT,
+           POINT_LOVER_SEGMENT,
+           WEALTH_SEGMENT,
+           Flag_Omni_Channel
+
+     from A3.Store_A_sbl_os as a
+	 left join CRM.CRM_SINGLE_view_24Q2 as e /*edit Single view*/
+     on a.sbl_member_id = e.sbl_member_id
+     ;
+quit;
+
+
+PROC SQL THREADS;
+     CREATE TABLE A3.Store_A_sbl_os_p_profile (compress= yes) as
+	            select distinct 
+				put( "",$30.) as Site,
+				put( "",$30.) as Type, 
+                put( "",$30.)as detail_Type,
+                0 as SBL_Member_id
+
+           from A3.Store_A_sbl_os;
+quit;
+
+
+%Macro execute_S(a,b,c);
+     proc sql threads;
+           insert into  A3.Store_A_sbl_os_p_profile  /*change table*/
+                select 
+					Site,
+					&b,
+					&c,
+                     count(distinct a.SBL_Member_id) as SBL_Member_id
+
+                from A3.Store_A_sbl_os_p a  /*change table*/
+
+
+                group by Site, &b,&c;
+     quit;
+
+
+%Mend;
+
+options mprint;
+%execute_s(Age,'Age_Range',Age_Range);
+%execute_s(GEN,'Generation',Generation);
+%execute_s(STATUS,'MARITAL_STATUS',MARITAL_STATUS);
+%execute_s(SEX,'Gender',Gender);
+%execute_s(WORKN,'Occupation',Occupation);
+%execute_s(Edu,'Education',Education_Level);
+%execute_s(MONTHIN,'Monthlyincome',Mthly_Income);
+%execute_s(CUSTOMER_TYPE,'CUSTOMER_TYPE',Customer_Type);
+%execute_s(segment,'segment',segment);
+%execute_s(WEALTH,'WEALTH_SCORE',WEALTH_SEGMENT);
+%execute_s(FOOD,'FOOD_LUXURY',FOOD_LUXURY_SEGMENT);
+%execute_s(BEAUTY_SEGMENT,'BEAUTY_SEGMENT',BEAUTY_SEGMENT);
+%execute_s(BEAUTY_LUXURY_SEG,'BEAUTY_LUXURY_SEGMENT',BEAUTY_LUXURY_SEGMENT);
+%execute_s(CFR_COMPANY_RANK,'CFR_COMPANY_RANK',CFR_COMPANY_RANK);
+%execute_s(CFG_Rank,'CFG_Rank',CFG_Rank);
+%execute_s(ELECTRONICS_LUXURY_SEGMENT,'ELECTRONICS_LUXURY_SEGMENT',ELECTRONICS_LUXURY_SEGMENT);
+%execute_s(FASHION_LUXURY_SEGMENT,'FASHION_LUXURY_SEGMENT',FASHION_LUXURY_SEGMENT);
+%execute_s(PAYMENT_SEGMENT,'PAYMENT_SEGMENT',PAYMENT_SEGMENT);
+%execute_s(KIDS_STAGE,'KIDS_STAGE',KIDS_STAGE);
+%execute_s(POINT_LOVER_SEGMENT,'POINT_LOVER_SEGMENT',POINT_LOVER_SEGMENT);
+%execute_s(PET_LOVER_SEGMENT,'PET_LOVER_SEGMENT',PET_LOVER_SEGMENT);
+%execute_s(Flag_Omni_Channel,'Flag_Omni_Channel',Flag_Omni_Channel);
+%execute_s(olympic_cfg,'olympic_cfg',olympic_cfg);
+
+/*export file*/
+
+/*Penetration*/
+proc sql;
+	create table A3.Store_A_sales_m_subdept as
+	select distinct Site, subdept_code, subdept_eng_desc,
+				count(distinct sbl_member_id) as tc,
+				count(distinct ref_key) as tx, 
+				sum(quant) as quant, 
+				sum(total)as total, 
+				sum(GP) as gp, 
+				sum(net_total) as net_total
+	from A3.Store_A_sales_m
+	group by Site, subdept_code, subdept_eng_desc
+	;
+quit;
+
+
+
+
+/*Map expat*/
+proc sql threads;
+create table A3.Store_A_SBL_f (compress = yes) as
+select distinct A.*,
+case when B.Nationality_cd not in ('THA') 
+or B.Nationality_cd in ('')
+Then 'Expat'
+else 'Thai' end as Flag_Expat
+from A3.Store_A_SBL as A
+left join topssbl.sbl_customer as B
+on A.sbl_member_id = B.sbl_member_id
+;
+quit;
+
+proc sql;
+create table A3.Store_A_SBL_f_expat as
+select A.*
+from A3.Store_A_SBL_f as A
+where Flag_Expat in ('Expat')
+;
+quit;
+
+proc sql threads;
+create table A3.Store_A_SBL_f_expat_cd (compress = yes) as
+select distinct A.*, B.Nationality_cd
+from A3.Store_A_SBL_f_expat as A
+left join topssbl.sbl_customer as B
+on A.sbl_member_id = B.sbl_member_id
+;
+quit;
+
+proc sql;
+create table A3.Store_A_SBL_f_expat_cd_c as
+select distinct A.Nationality_cd, count(distinct sbl_member_id) as No_id
+from A3.Store_A_SBL_f_expat_cd as A
+group by Nationality_cd
+order by No_id desc
+;
+quit;
+
+proc sql;
+create table A3.Store_A_SBL_f_c as
+select distinct A.Flag_Expat, count(distinct sbl_member_id) as No_id
+from A3.Store_A_SBL_f as A
+group by Flag_Expat
+order by No_id desc
+;
+quit;
+
+
+
+
+
+
+
+
