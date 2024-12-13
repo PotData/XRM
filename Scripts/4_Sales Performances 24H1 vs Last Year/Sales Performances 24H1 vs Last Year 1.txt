@@ -1,0 +1,967 @@
+/*Sales Performances YTDAug vs Last Year*/
+
+options dlcreatedir;
+libname AH 'G:\Ton\Sales_Perform_Y24\';
+
+
+/*Y2024*/
+
+/*CFR*/
+%MACRO EXECUTE_SALE_TRANS_ALL(yyyymm);
+proc sql;
+	create table AH.CFR_Sale_YTD_TY_&yyyymm as
+	select distinct B.STORE_FORMAT, substr(trn_dte, 1,6) as Year_mth, A.sbl_member_id,
+
+                case when A.sbl_member_id is not null 
+                and sbl_member_id not in ('9-014342304','9-014223414','9-014511211','9-014493473','9-014234126','9-014651449','9999999999')
+                Then '01_Member' else '02_Non_member' end as Flag_member,
+
+	            count(distinct catx('_', store_id, reference, trn_dte)) as Tx,
+                sum(qty) as quant,
+				sum(total) as total, sum(net_total) as net_total, sum(GP) as GP, 'CFR' as BU
+	from Topst1c.SALES_PROMOTION_COMP_&yyyymm as A, Topsrst.d_store as B
+	where A.store_id = B.store_code
+	and trn_dte between '20240101' and '20240831'
+	group by B.STORE_FORMAT, Year_mth, sbl_member_id
+	;
+quit;
+%MEND;
+
+OPTIONS mprint;
+%EXECUTE_SALE_TRANS_ALL(202401)
+%EXECUTE_SALE_TRANS_ALL(202402)
+%EXECUTE_SALE_TRANS_ALL(202403)
+%EXECUTE_SALE_TRANS_ALL(202404)
+%EXECUTE_SALE_TRANS_ALL(202405)
+%EXECUTE_SALE_TRANS_ALL(202406)
+%EXECUTE_SALE_TRANS_ALL(202407)
+%EXECUTE_SALE_TRANS_ALL(202408)
+;
+
+
+
+data AH.CFR_Sale_YTD_TY;
+set AH.CFR_Sale_YTD_TY_202401
+AH.CFR_Sale_YTD_TY_202402
+AH.CFR_Sale_YTD_TY_202403
+AH.CFR_Sale_YTD_TY_202404
+AH.CFR_Sale_YTD_TY_202405
+AH.CFR_Sale_YTD_TY_202406
+AH.CFR_Sale_YTD_TY_202407
+AH.CFR_Sale_YTD_TY_202408
+;
+run;
+
+
+proc sql;
+create table AH.CFR_Sale_YTD_TY_cok (compress = yes) as
+select distinct '01_TY' as Period, BU, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFR_Sale_YTD_TY as L
+group by Period, BU, Year_mth, Flag_member
+order by Period, BU, Year_mth, Flag_member asc
+;
+quit;
+
+
+
+
+
+
+
+
+
+
+
+/*CFM*/
+%MACRO EXECUTE_SALE_TRANS_ALL(yyyymm);
+proc sql;
+	create table AH.CFM_Sale_YTD_TY_&yyyymm as
+	select distinct 'CFM' as STORE_FORMAT, substr(trn_dte, 1,6) as Year_mth, A.sbl_member_id,
+
+                case when A.sbl_member_id is not null 
+                and sbl_member_id not in ('9-014342304','9-014223414','9-014511211','9-014493473','9-014234126','9-014651449','9999999999')
+                Then '01_Member' else '02_Non_member' end as Flag_member,
+
+	            count(distinct catx('_', store_id, reference, trn_dte)) as Tx,
+                sum(qty) as quant,
+				sum(total) as total, sum(net_total) as net_total, sum(GP) as GP, 'CFM' as BU
+	from Topst1c.CFM_SALES_PROMOTION_COMP_&yyyymm as A, Topscfm.STORE_MASTER as B
+	where A.store_id = B.store_code
+	and trn_dte between '20240101' and '20240831'
+	group by B.STORE_FORMAT, Year_mth, sbl_member_id
+	;
+quit;
+%MEND;
+
+OPTIONS mprint;
+%EXECUTE_SALE_TRANS_ALL(202401)
+%EXECUTE_SALE_TRANS_ALL(202402)
+%EXECUTE_SALE_TRANS_ALL(202403)
+%EXECUTE_SALE_TRANS_ALL(202404)
+%EXECUTE_SALE_TRANS_ALL(202405)
+%EXECUTE_SALE_TRANS_ALL(202406)
+%EXECUTE_SALE_TRANS_ALL(202407)
+%EXECUTE_SALE_TRANS_ALL(202408)
+;
+
+
+
+data AH.CFM_Sale_YTD_TY;
+set AH.CFM_Sale_YTD_TY_202401
+AH.CFM_Sale_YTD_TY_202402
+AH.CFM_Sale_YTD_TY_202403
+AH.CFM_Sale_YTD_TY_202404
+AH.CFM_Sale_YTD_TY_202405
+AH.CFM_Sale_YTD_TY_202406
+AH.CFM_Sale_YTD_TY_202407
+AH.CFM_Sale_YTD_TY_202408
+;
+run;
+
+
+proc sql;
+create table AH.CFM_Sale_YTD_TY_cok (compress = yes) as
+select distinct '01_TY' as Period, BU, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFM_Sale_YTD_TY as L
+group by Period, BU, Year_mth, Flag_member
+order by Period, BU, Year_mth, Flag_member asc
+;
+quit;
+
+
+
+
+
+data AH.CFG_Sale_YTD_TY;
+set AH.CFR_Sale_YTD_TY
+AH.CFM_Sale_YTD_TY
+;
+run;
+
+
+
+
+
+/*Y2023*/
+/*CFR*/
+%MACRO EXECUTE_SALE_TRANS_ALL(yyyymm);
+proc sql;
+	create table AH.CFR_Sale_YTD_LY_&yyyymm as
+	select distinct B.STORE_FORMAT, substr(trn_dte, 1,6) as Year_mth, A.sbl_member_id,
+
+                case when A.sbl_member_id is not null 
+                and sbl_member_id not in ('9-014342304','9-014223414','9-014511211','9-014493473','9-014234126','9-014651449','9999999999')
+                Then '01_Member' else '02_Non_member' end as Flag_member,
+
+	            count(distinct catx('_', store_id, reference, trn_dte)) as Tx,
+                sum(qtY) as quant,
+				sum(total) as total, sum(net_total) as net_total, sum(GP) as GP, 'CFR' as BU
+	from Topst1c.SALES_PROMOTION_COMP_&yyyymm as A, Topsrst.d_store as B
+	where A.store_id = B.store_code
+	and trn_dte between '20230101' and '20230831'
+	group by B.STORE_FORMAT, Year_mth, sbl_member_id
+	;
+quit;
+%MEND;
+
+OPTIONS mprint;
+%EXECUTE_SALE_TRANS_ALL(202401)
+%EXECUTE_SALE_TRANS_ALL(202402)
+%EXECUTE_SALE_TRANS_ALL(202403)
+%EXECUTE_SALE_TRANS_ALL(202404)
+%EXECUTE_SALE_TRANS_ALL(202405)
+%EXECUTE_SALE_TRANS_ALL(202406)
+%EXECUTE_SALE_TRANS_ALL(202407)
+%EXECUTE_SALE_TRANS_ALL(202408)
+;
+
+
+data AH.CFR_Sale_YTD_LY;
+set AH.CFR_Sale_YTD_LY_202301
+AH.CFR_Sale_YTD_LY_202302
+AH.CFR_Sale_YTD_LY_202303
+AH.CFR_Sale_YTD_LY_202304
+AH.CFR_Sale_YTD_LY_202305
+AH.CFR_Sale_YTD_LY_202306
+AH.CFR_Sale_YTD_LY_202307
+AH.CFR_Sale_YTD_LY_202308
+;
+run;
+
+
+
+proc sql;
+create table AH.CFR_Sale_YTD_LY_cok (compress = yes) as
+select distinct '02_LY' as Period, BU, Year_mth, Flag_member, count(sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFR_Sale_YTD_LY as L
+group by Period, BU, Year_mth, Flag_member
+order by Period, BU, Year_mth, Flag_member asc
+;
+quit;
+
+
+
+
+
+
+
+
+
+
+/*CFM*/
+%MACRO EXECUTE_SALE_TRANS_ALL(yyyymm);
+proc sql;
+	create table AH.CFM_Sale_YTD_LY_&yyyymm as
+	select distinct 'CFM' as STORE_FORMAT, substr(trn_dte, 1,6) as Year_mth, A.sbl_member_id,
+
+                case when A.sbl_member_id is not null 
+                and sbl_member_id not in ('9-014342304','9-014223414','9-014511211','9-014493473','9-014234126','9-014651449','9999999999')
+                Then '01_Member' else '02_Non_member' end as Flag_member,
+
+	            count(distinct catx('_', store_id, reference, trn_dte)) as Tx,
+                sum(qtY) as quant,
+				sum(total) as total, sum(net_total) as net_total, sum(GP) as GP, 'CFM' as BU
+	from Topst1c.CFM_SALES_PROMOTION_COMP_&yyyymm as A, Topscfm.STORE_MASTER as B
+	where A.store_id = B.store_code
+	and trn_dte between '20230101' and '20230831'
+	group by B.STORE_FORMAT, Year_mth, sbl_member_id
+	;
+quit;
+%MEND;
+
+OPTIONS mprint;
+%EXECUTE_SALE_TRANS_ALL(202401)
+%EXECUTE_SALE_TRANS_ALL(202402)
+%EXECUTE_SALE_TRANS_ALL(202403)
+%EXECUTE_SALE_TRANS_ALL(202404)
+%EXECUTE_SALE_TRANS_ALL(202405)
+%EXECUTE_SALE_TRANS_ALL(202406)
+%EXECUTE_SALE_TRANS_ALL(202407)
+%EXECUTE_SALE_TRANS_ALL(202408)
+;
+
+
+
+
+
+data AH.CFM_Sale_YTD_LY;
+set AH.CFM_Sale_YTD_LY_202301
+AH.CFM_Sale_YTD_LY_202302
+AH.CFM_Sale_YTD_LY_202303
+AH.CFM_Sale_YTD_LY_202304
+AH.CFM_Sale_YTD_LY_202305
+AH.CFM_Sale_YTD_LY_202306
+AH.CFM_Sale_YTD_LY_202307
+AH.CFM_Sale_YTD_LY_202308
+;
+run;
+
+
+
+
+
+
+
+/*Combine 2 Years*/
+data AH.CFG_Sale_YTD_TYLY2;
+set AH.CFG_Sale_YTD_TY
+AH.CFG_Sale_YTD_LY
+;
+run;
+
+proc sql;
+create table AH.CFG_Sale_YTD_TYLY_cok (compress = yes) as
+select distinct Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY2 as L
+group by Year_mth, Flag_member
+order by Year_mth, Flag_member asc
+;
+quit;
+
+
+proc sql;
+create table AH.CFGe_Sale_YTD_TYLY_cok (compress = yes) as
+select distinct Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY2 as L
+where STORE_FORMAT in ('Central Food Hall', 'TOPS MARKET', 'TOPS Fine Food', 'Super Store A-P', 'TOPS DAILY', 'SEGAFREDO', 'Eathai', 'CFM')
+group by Year_mth, Flag_member
+order by Year_mth, Flag_member asc
+;
+quit;
+
+
+
+
+proc sql;
+create table AH.CFG_Sale_YTD_TY_card (compress = yes) as
+select distinct sbl_member_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TY as L
+where store_format not in ('TOPS CLUB', 'Super Khum WS')
+and Flag_member in ('01_Member')
+group by sbl_member_id
+;
+quit;
+
+
+
+
+
+
+
+/*YTD - All Banner*/
+data AH.CFG_Sale_YTD_TYLY_a;
+set AH.CFG_Sale_YTD_TY
+AH.CFG_Sale_YTD_LY
+;
+run;
+
+
+
+
+
+
+
+/*YTD - All exclude topsclub, skw*/
+proc sql;
+create table AH.CFG_Sale_YTD_TYLY_a2 (compress = yes) as
+select A.*,
+
+case when A.store_format in ('Central Food Hall', 'TOPS Fine Food') then '01_Tops Food Hall'
+when A.store_format in ('TOPS MARKET') then '02_Tops Large'
+when A.store_format in ('TOPS DAILY', 'CFM') then '03_Tops Daily'
+else '04_Others' end as store_format2
+from AH.CFG_Sale_YTD_TYLY_a as A
+;
+quit;
+
+
+
+proc sql;
+create table AH.CFG3_Sale_YTD_TYLY_cok_YTD (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where store_format not in ('TOPS CLUB', 'Super Khum WS')
+group by Years, Flag_member
+order by Years, Flag_member asc
+;
+quit;
+
+
+proc sql;
+create table AH.CFG3_Sale_YTD_TYLY_cok_YTD_mth (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where store_format not in ('TOPS CLUB', 'Super Khum WS')
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.CFG3_Sale_YTD_TYLY_cok_YTD_mth_a (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where store_format not in ('TOPS CLUB', 'Super Khum WS')
+group by Years, Year_mth
+order by Years, Year_mth asc
+;
+quit;
+
+proc sql;
+create table AH.CFG3_Sale_YTD_TYLY_cok_YTD_mth_m (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where store_format not in ('TOPS CLUB', 'Super Khum WS')
+and Flag_member in ('01_Member')
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.CFG3_Sale_YTD_TYLY_cok_fm (compress = yes) as
+select distinct store_format2, substr(Year_mth, 1,4) as Years, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where store_format not in ('TOPS CLUB', 'Super Khum WS')
+group by store_format2, Years, Flag_member
+order by store_format2, Years, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.CFG3_Sale_YTD_TYLY_cok_fm_m (compress = yes) as
+select distinct store_format2, substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where store_format2 not in ('TOPS CLUB', 'Super Khum WS')
+and Flag_member in ('01_Member')
+group by store_format2, Years, Year_mth, Flag_member
+order by store_format2, Years, Year_mth, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.CFG3_Sale_YTD_TYLY_cmth (compress = yes) as
+select distinct store_format2, substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where store_format2 not in ('TOPS CLUB', 'Super Khum WS')
+and Flag_member in ('01_Member')
+group by store_format2, Years, Year_mth, Flag_member
+order by store_format2, Years, Year_mth, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.CFG3_Sale_YTD_TYLY_cok_card (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where store_format2 not in ('TOPS CLUB', 'Super Khum WS')
+and Flag_member in ('01_Member')
+group by Years, Flag_member
+order by Years, Flag_member asc
+;
+quit;
+
+
+
+
+
+/*CFG - All format*/
+proc sql;
+create table AH.CFG_Sale_YTD_TYLY_cok_YTD (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+group by Years, Flag_member
+order by Years, Flag_member asc
+;
+quit;
+
+
+proc sql;
+create table AH.CFG_Sale_YTD_TYLY_cok_YTD_mth (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.CFG3_Sale_YTD_TYLY_cok_YTD_mth_a (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+group by Years, Year_mth
+order by Years, Year_mth asc
+;
+quit;
+
+proc sql;
+create table AH.CFG_Sale_YTD_TYLY_cok_YTD_mth_m (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where Flag_member in ('01_Member')
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+
+
+proc sql;
+create table AH.CFG_Sale_YTD_TYLY_cok_fm (compress = yes) as
+select distinct store_format2, substr(Year_mth, 1,4) as Years, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+group by store_format2, Years, Flag_member
+order by store_format2, Years, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.CFG_Sale_YTD_TYLY_cok_fm_m (compress = yes) as
+select distinct store_format2, substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where Flag_member in ('01_Member')
+group by store_format2, Years, Year_mth, Flag_member
+order by store_format2, Years, Year_mth, Flag_member asc
+;
+quit;
+
+
+proc sql;
+create table AH.CFG_Sale_YTD_TYLY_cok_card (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where Flag_member in ('01_Member')
+group by Years, Flag_member
+order by Years, Flag_member asc
+;
+quit;
+
+
+proc sql;
+create table AH.CFG_Sale_YTD_TYLY_cok_all (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+group by Years, Flag_member
+order by Years, Flag_member asc
+;
+quit;
+
+
+
+
+
+
+
+
+
+
+
+
+/*By Banner*/
+/*Tops Food Hall*/
+proc sql;
+create table AH.TFH_Sale_YTD_TYLY_cok_YTD (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where STORE_FORMAT in ('Central Food Hall')
+group by Years, Flag_member
+order by Years, Flag_member asc
+;
+quit;
+
+
+proc sql;
+create table AH.TFH_Sale_YTD_TYLY_cok_YTD_mth (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where STORE_FORMAT in ('Central Food Hall')
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.TFH_Sale_YTD_TYLY_cok_YTD_mth_m (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where Flag_member in ('01_Member')
+and STORE_FORMAT in ('Central Food Hall')
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.TFH_Sale_YTD_TYLY_cok_fm_m (compress = yes) as
+select distinct store_format, substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where Flag_member in ('01_Member')
+and STORE_FORMAT in ('Central Food Hall')
+group by store_format, Years, Year_mth, Flag_member
+order by store_format, Years, Year_mth, Flag_member asc
+;
+quit;
+
+
+
+
+/*Tops Large*/
+proc sql;
+create table AH.LFM_Sale_YTD_TYLY_cok_YTD (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where STORE_FORMAT in ('TOPS MARKET', 'Super Store A-P')
+group by Years, Flag_member
+order by Years, Flag_member asc
+;
+quit;
+
+
+proc sql;
+create table AH.LFM_Sale_YTD_TYLY_cok_YTD_mth (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where STORE_FORMAT in ('TOPS MARKET', 'Super Store A-P')
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.LFM_Sale_YTD_TYLY_cok_YTD_mth_m (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where Flag_member in ('01_Member')
+and STORE_FORMAT in ('TOPS MARKET', 'Super Store A-P')
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.LFM_Sale_YTD_TYLY_cok_fm_m (compress = yes) as
+select distinct store_format, substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where Flag_member in ('01_Member')
+and STORE_FORMAT in ('TOPS MARKET', 'Super Store A-P')
+group by store_format, Years, Year_mth, Flag_member
+order by store_format, Years, Year_mth, Flag_member asc
+;
+quit;
+
+
+
+
+
+/*Tops Small*/
+proc sql;
+create table AH.SFM_Sale_YTD_TYLY_cok_YTD (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where STORE_FORMAT in ('TOPS DAILY', 'CFM')
+group by Years, Flag_member
+order by Years, Flag_member asc
+;
+quit;
+
+
+proc sql;
+create table AH.SFM_Sale_YTD_TYLY_cok_YTD_mth (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where STORE_FORMAT in ('TOPS DAILY', 'CFM')
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.SFM_Sale_YTD_TYLY_cok_YTD_mth_m (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where Flag_member in ('01_Member')
+and STORE_FORMAT in ('TOPS DAILY', 'CFM')
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.SFM_Sale_YTD_TYLY_cok_fm_m (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where Flag_member in ('01_Member')
+and STORE_FORMAT in ('TOPS DAILY', 'CFM')
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+
+
+
+
+
+
+
+
+/*Tops daily*/
+proc sql;
+create table AH.TDS_Sale_YTD_TYLY_cok_YTD (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where STORE_FORMAT in ('TOPS DAILY')
+group by Years, Flag_member
+order by Years, Flag_member asc
+;
+quit;
+
+
+proc sql;
+create table AH.TDS_Sale_YTD_TYLY_cok_YTD_mth (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where STORE_FORMAT in ('TOPS DAILY')
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.TDS_Sale_YTD_TYLY_cok_YTD_mth_m (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where Flag_member in ('01_Member')
+and STORE_FORMAT in ('TOPS DAILY')
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.TDS_Sale_YTD_TYLY_cok_fm_m (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where Flag_member in ('01_Member')
+and STORE_FORMAT in ('TOPS DAILY')
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*CFM*/
+proc sql;
+create table AH.CFM_Sale_YTD_TYLY_cok_YTD (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where STORE_FORMAT in ('CFM')
+group by Years, Flag_member
+order by Years, Flag_member asc
+;
+quit;
+
+
+proc sql;
+create table AH.CFM_Sale_YTD_TYLY_cok_YTD_mth (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where STORE_FORMAT in ('CFM')
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.CFM_Sale_YTD_TYLY_cok_YTD_mth_m (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where Flag_member in ('01_Member')
+and STORE_FORMAT in ('CFM')
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.CFM_Sale_YTD_TYLY_cok_fm_m (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a2 as L
+where Flag_member in ('01_Member')
+and STORE_FORMAT in ('CFM')
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+
+
+
+
+
+
+
+
+/*Tops fine food*/
+proc sql;
+create table AH.TFF_Sale_YTD_TYLY_cok_YTD (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a as L
+where STORE_FORMAT in ('TOPS Fine Food')
+group by Years, Flag_member
+order by Years, Flag_member asc
+;
+quit;
+
+
+proc sql;
+create table AH.TFF_Sale_YTD_TYLY_cok_YTD_mth (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a as L
+where STORE_FORMAT in ('TOPS Fine Food')
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.TFF_Sale_YTD_TYLY_cok_YTD_mth_m (compress = yes) as
+select distinct substr(Year_mth, 1,4) as Years, Year_mth, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a as L
+where Flag_member in ('01_Member')
+and STORE_FORMAT in ('TOPS Fine Food')
+group by Years, Year_mth, Flag_member
+order by Years, Year_mth, Flag_member asc
+;
+quit;
+
+proc sql;
+create table AH.TFF_Sale_YTD_TYLY_cok_fm_m (compress = yes) as
+select distinct store_format, substr(Year_mth, 1,4) as Years, Year_mth, Flag_member, count(distinct sbl_member_id) as No_id, sum(tx) as tx, sum(QUANT) as quant, 
+                 		sum(total)as total, 
+						sum(net_total) as net_total,
+                 		sum(GP) as gp
+from AH.CFG_Sale_YTD_TYLY_a as L
+where Flag_member in ('01_Member')
+and STORE_FORMAT in ('TOPS Fine Food')
+group by store_format, Years, Year_mth, Flag_member
+order by store_format, Years, Year_mth, Flag_member asc
+;
+quit;
+
+
+
+
+
+
+
+
+
+
