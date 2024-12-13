@@ -1,0 +1,1001 @@
+/* Customer movement */
+
+/*ดึงข้อมูลรายเดือน*/
+proc sql threads;
+create table DH.All_202301 (compress = yes) AS                      
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202301 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME 
+having total > 0.00
+;
+quit;
+proc sql threads;
+create table DH.All_202302 (compress = yes) AS                      
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202302 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME 
+having total > 0.00
+;
+quit;
+
+proc sql threads;
+create table DH.All_202303 (compress = yes) AS                      
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202303 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME 
+having total > 0.00
+;
+quit;
+proc sql threads;
+create table DH.All_202304 (compress = yes) AS                      
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202304 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME 
+having total > 0.00
+;
+quit;
+proc sql threads;
+create table DH.All_202305 (compress = yes) AS                      
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202305 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME 
+having total > 0.00
+;
+quit;
+proc sql threads;
+create table DH.All_202306 (compress = yes) AS                      
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202306 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME 
+having total > 0.00
+;
+quit;
+proc sql threads;
+create table DH.All_202307 (compress = yes) AS                      
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202307 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME 
+having total > 0.00
+;
+quit;
+
+proc sql threads;
+create table DH.All_202308 (compress = yes) AS                      
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202308 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME 
+having total > 0.00
+;
+quit;
+
+proc sql threads;
+create table DH.All_202309 (compress = yes) AS                   
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202309 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME 
+having total > 0.00
+;                     
+quit;
+
+proc sql threads;
+create table DH.All_202310 (compress = yes) AS                
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202310 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME 
+having total > 0.00
+;                     
+quit;
+
+proc sql threads;
+create table DH.All_202311 (compress = yes) AS                
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202311 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME 
+having total > 0.00
+;                     
+quit;
+
+proc sql threads;
+create table DH.All_202312 (compress = yes) AS                
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202312 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE 
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME 
+having total > 0.00
+;                     
+quit;
+
+proc sql threads;
+create table DH.All_202401 (compress = yes) AS                
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202401 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE 
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME   
+having total > 0.00
+;                     
+quit;
+
+proc sql threads;   
+create table DH.All_202402 (compress = yes) AS                
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202402 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE 
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME   
+having total > 0.00
+;                     
+quit;
+proc sql threads;   
+create table DH.All_202403 (compress = yes) AS                
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202403 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE 
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME   
+having total > 0.00
+;                     
+quit;
+proc sql threads;   
+create table DH.All_202404 (compress = yes) AS                
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202404 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE 
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME   
+having total > 0.00
+;                     
+quit;
+proc sql threads;   
+create table DH.All_202405 (compress = yes) AS                
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202405 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE 
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME   
+having total > 0.00
+;                     
+quit;
+proc sql threads;   
+create table DH.All_202406 (compress = yes) AS                
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202406 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE 
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME   
+having total > 0.00
+;                     
+quit;
+
+proc sql threads;   
+create table DH.All_202407 (compress = yes) AS                
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202407 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE 
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME   
+having total > 0.00
+;                     
+quit;
+
+proc sql threads;   
+create table DH.All_202408 (compress = yes) AS                
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202408 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE 
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME   
+having total > 0.00
+;                     
+quit;
+
+proc sql threads;   /* data as of 30sep*/
+create table DH.All_202409 (compress = yes) AS                
+select distinct store_id,sbl_member_id,ref_key,trn_dte as ttm2, sum(QTY) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp
+,store_format,STORE_NAME 
+from topst1c.Sales_promotion_comp_202409 a left join topsrst.D_store as b on a.store_id = b.STORE_CODE 
+group by store_id,sbl_member_id,ref_key,ttm2,store_format,STORE_NAME   
+having total > 0.00
+;                     
+quit;
+
+
+/*เอาข้อมูลต่อกัน*/
+
+data DH.all_2023  (compress = yes) ;
+set 
+DH.All_202301
+DH.All_202302
+DH.All_202303
+DH.All_202304
+DH.All_202305
+DH.All_202306
+DH.All_202307
+DH.All_202308
+DH.All_202309
+DH.All_202310
+DH.All_202311
+DH.All_202312
+DH.All_202401
+DH.All_202402
+DH.All_202403
+DH.All_202404
+DH.All_202405
+DH.All_202406
+DH.All_202407
+DH.All_202408
+DH.All_202409
+;
+run;
+
+
+
+/**Store_All**/
+/**GROUP REFERENCE**/
+
+
+/*ระบุ period ที่จะ compare*/
+
+proc sql;
+create table DH.ALL_TY_1 (compress = yes) as
+select store_id,sbl_member_id,REF_key,sum(QUANT) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp,
+store_format,STORE_NAME,TTM2 
+from DH.All_2023
+where TTM2 between '20240101' and '20240930'  /*ระบุ period ที่จะ compare*/
+group by  store_id,sbl_member_id,REF_key,store_format,STORE_NAME,TTM2
+;
+quit;
+
+proc sql;
+create table DH.ALL_PP_1 (compress = yes) as
+select store_id,sbl_member_id,REF_key,sum(QUANT) as quant, Sum(TOTAL) as total, sum(NET_TOTAL) as net_total, sum(GP) as gp,
+store_format,STORE_NAME,TTM2 
+from DH.All_2023
+where TTM2 between '20230101' and '20230930' /*ระบุ period ที่จะ compare*/
+group by  store_id,sbl_member_id,REF_key,store_format,STORE_NAME,TTM2
+;
+quit;
+
+
+/**Count REFERENCE**/
+proc sql;
+create table DH.ALL_TY_2 (compress = yes) as
+select sbl_member_id,store_id,COUNT(distinct ref_key) as Tx_TY, sum(quant) as quant_TY, sum(total) as total_TY, 
+sum(net_total) as net_total_TY, sum(gp) as gp_TY, store_format, STORE_NAME 
+from DH.ALL_TY_1
+group by sbl_member_id,store_id,store_format,STORE_NAME 
+;
+quit;
+
+proc sql;
+create table DH.ALL_PP_2 (compress = yes) as
+select sbl_member_id,store_id,COUNT(distinct REF_key) as Tx_PP, sum(quant) as quant_PP, sum(total) as total_PP, 
+sum(net_total) as net_total_PP, sum(gp) as gp_PP, store_format, STORE_NAME 
+from DH.ALL_PP_1
+group by sbl_member_id,store_id,store_format,STORE_NAME 
+;
+quit;
+
+
+
+/**SUM REFERENCE**/
+proc sql;
+create table DH.ALL_TY_3 (compress = yes) as
+select sbl_member_id,store_id,store_format,STORE_NAME,sum(TX_TY) as Tx_TY,sum(quant_TY) as quant_TY, sum(total_TY) as total_TY, 
+sum(net_total_TY) as net_total_TY, sum(gp_TY) as gp_TY
+from DH.ALL_TY_2
+group by sbl_member_id,store_id,store_format,STORE_NAME 
+;
+quit;
+
+proc sql;
+create table DH.ALL_PP_3 (compress = yes) as
+select sbl_member_id,store_id,store_format,STORE_NAME,sum(TX_PP) as Tx_PP,sum(quant_PP) as quant_PP, sum(total_PP) as total_PP, 
+sum(net_total_PP) as net_total_PP, sum(gp_PP) as gp_PP
+from DH.ALL_PP_2
+group by sbl_member_id,store_id,store_format,STORE_NAME 
+;
+quit;
+
+
+/*Count T1C*/
+proc sql;
+create table DH.ALL_TY_6 (compress = yes) as
+select count(distinct sbl_member_ID ) as  ID, sum (Tx_TY) as Tx_TY ,sum(quant_TY) as quant_TY, Sum(total_TY) as total_TY, 
+sum(net_total_TY) as net_total_TY,sum(gp_TY) as gp_TY 
+from DH.ALL_TY_3
+quit;
+
+proc sql;
+create table DH.ALL_PP_6 (compress = yes) as
+select count(distinct sbl_member_ID ) as  ID, sum (Tx_PP) as Tx_PP ,sum(quant_PP) as quant_PP, Sum(total_PP) as total_PP, 
+sum(net_total_PP) as net_total_PP,sum(gp_PP) as gp_PP 
+from DH.ALL_PP_3
+quit;
+
+
+
+
+/**Store_Eligible**/
+proc sql;
+create table DH.Eli_TY_1 (compress = yes) as
+select distinct sbl_member_ID,store_id,store_format,STORE_NAME,sum (Tx_TY) as Tx_TY ,sum(quant_TY) as quant_TY, Sum(total_TY) as total_TY, 
+sum(net_total_TY) as net_total_TY,sum(gp_TY) as gp_TY
+from DH.ALL_TY_3
+where sbl_member_ID is not null and store_id in ('054')  /*ระบุสาขา*/
+group by sbl_member_ID,store_id,store_format,STORE_NAME
+;
+quit;
+
+proc sql;
+create table DH.Eli_PP_1 (compress = yes) as
+select distinct sbl_member_ID,store_id,store_format,STORE_NAME,sum (Tx_PP) as Tx_PP ,sum(quant_PP) as quant_PP, Sum(total_PP) as total_PP, 
+sum(net_total_PP) as net_total_PP,sum(gp_PP) as gp_PP
+from DH.ALL_PP_3
+where sbl_member_ID is not null and store_id in ('054') /*ระบุสาขา*/
+group by sbl_member_ID,store_id,store_format,STORE_NAME ;
+quit;
+
+
+
+/*Group  T1C*/
+proc sql;
+create table DH.Eli_TY_2  (compress = yes) as
+select distinct sbl_member_ID,sum (Tx_TY) as Tx_TY ,sum(quant_TY) as quant_TY,Sum(total_TY) as total_TY,sum(net_total_TY) as net_total_TY,sum(gp_TY) as gp_TY
+from DH.Eli_TY_1
+group by sbl_member_ID ;
+quit;
+
+proc sql;
+create table DH.Eli_PP_2  (compress = yes) as
+select distinct sbl_member_ID,sum (Tx_PP) as Tx_PP ,sum(quant_PP) as quant_PP,Sum(total_PP) as total_PP,sum(net_total_PP) as net_total_PP,sum(gp_PP) as gp_PP
+from DH.Eli_PP_1
+group by sbl_member_ID ;
+quit;
+
+
+
+/*Count T1C*/
+proc sql;
+create table DH.Eli_TY_3 (compress = yes) as
+select count(distinct sbl_member_ID ) as ID, sum (Tx_TY) as Tx_TY ,sum(quant_TY) as quant_TY, Sum(total_TY) as total_TY, 
+sum(net_total_TY) as net_total_TY,sum(gp_TY) as gp_TY 
+from DH.Eli_TY_2
+quit;
+
+proc sql;
+create table DH.Eli_PP_3 (compress = yes) as
+select count(distinct sbl_member_ID ) as ID, sum (Tx_PP) as Tx_PP ,sum(quant_PP) as quant_PP, Sum(total_PP) as total_PP, 
+sum(net_total_PP) as net_total_PP,sum(gp_PP) as gp_PP 
+from DH.Eli_PP_2
+quit;
+
+
+/**Flag Other Store**/
+proc sql;
+create table DH.Other_TY (compress = yes) as
+select a.*
+from DH.All_TY_3 as a 
+where store_id not in ('054')   /*ระบุสาขา*/
+group by sbl_member_ID, store_id
+order by sbl_member_ID, TX_TY desc, Total_TY desc
+;
+quit;
+
+proc sql;
+create table DH.Other_PP (compress = yes) as
+select a.*
+from DH.All_PP_3 as a
+where store_id not in ('054')  /*ระบุสาขา*/
+group by sbl_member_ID, store_id
+order by sbl_member_ID, TX_PP desc, Total_PP desc
+;
+quit;
+
+
+
+DATA DH.Other_TY ;
+SET DH.Other_TY ;
+BY sbl_member_ID;
+IF first.sbl_member_ID THEN STORE_RANK =0;
+STORE_RANK +1;
+RUN; 
+
+DATA DH.Other_PP ;
+SET DH.Other_PP ;
+BY sbl_member_ID;
+IF first.sbl_member_ID THEN STORE_RANK =0;
+STORE_RANK +1;
+RUN; 
+
+
+
+data DH.Other_TY_TYPE (compress = yes) ;
+set DH.Other_TY ;
+if STORE_RANK = 1 then TYPE = 'Second Store';
+else if STORE_RANK ^= 1 then TYPE = 'Other Store';
+where Total_TY is not null
+;
+run;
+
+data DH.Other_PP_TYPE (compress = yes) ;
+set DH.Other_PP ;
+if STORE_RANK = 1 then TYPE = 'Second Store';
+else if STORE_RANK ^= 1 then TYPE = 'Other Store';
+where Total_PP is not null
+;
+run;
+
+
+
+
+proc sql;
+create table DH.Other_TY_TYPE_T1C (compress = yes) as
+select distinct sbl_member_ID, sum(Tx_TY) as Tx_TY,sum(quant_TY) as quant_TY,Sum(total_TY) as total_TY, 
+sum(net_total_TY) as net_total_TY,sum(gp_TY) as gp_TY,TYPE
+from DH.Other_TY_TYPE
+where sbl_member_ID is not null
+group by sbl_member_ID,TYPE  ;
+quit;
+
+
+proc sql;
+create table DH.Other_PP_TYPE_T1C (compress = yes) as
+select distinct sbl_member_ID, sum(Tx_PP) as Tx_PP,sum(quant_PP) as quant_PP,Sum(total_PP) as total_PP, 
+sum(net_total_PP) as net_total_PP,sum(gp_PP) as gp_PP,TYPE
+from DH.Other_PP_TYPE
+where sbl_member_ID is not null
+group by sbl_member_ID,TYPE  ;
+quit;
+
+
+
+proc sql;
+create table DH.Other_TY_TYPE_T1C_  (compress = yes) as
+select distinct sbl_member_ID
+from DH.Other_TY_TYPE_T1C
+where sbl_member_ID is not null
+group by sbl_member_ID ;
+quit;
+
+
+proc sql;
+create table DH.Other_PP_TYPE_T1C_  (compress = yes) as
+select distinct sbl_member_ID
+from DH.Other_PP_TYPE_T1C
+where sbl_member_ID is not null
+group by sbl_member_ID ;
+quit;
+
+
+
+
+/**Flag Store Type**/
+/**Second Store**/
+proc sql;
+create table DH.EP_Second_Store_TY (compress = yes) as
+select a.*
+from DH.Other_TY_TYPE as a
+where TYPE = 'Second Store'
+group by sbl_member_ID,TYPE,store_id,store_format,STORE_NAME  ;
+quit;
+
+proc sql;
+create table DH.EP_Second_Store_PP (compress = yes) as
+select a.*
+from DH.Other_PP_TYPE as a
+where TYPE = 'Second Store'
+group by sbl_member_ID,TYPE,store_id,store_format,STORE_NAME  ;
+quit;
+
+
+proc sql;
+create table DH.EP_Second_Store_TY_END (compress = yes) as
+select distinct sbl_member_ID, sum (Tx_TY) as Tx_TY_SE, Sum(total_TY) as total_TY_SE, 
+sum(gp_TY)/sum(net_total_TY) as gp_per_TY_SE, Sum(total_TY)/sum (Tx_TY) as Basket_size_TY_SE,
+STORE_NAME as MOST_STORE_TY_SE 'MOST_STORE_TY_SE'
+from DH.EP_Second_Store_TY
+group by sbl_member_ID,STORE_NAME  ;
+quit;
+
+
+proc sql;
+create table DH.EP_Second_Store_PP_END (compress = yes) as
+select distinct sbl_member_ID, sum (Tx_PP) as Tx_PP_SE, Sum(total_PP) as total_PP_SE, 
+sum(gp_PP)/sum(net_total_PP) as gp_per_PP_SE, Sum(total_PP)/sum (Tx_PP) as Basket_size_PP_SE,
+STORE_NAME as MOST_STORE_PP_SE 'MOST_STORE_PP_SE'
+from DH.EP_Second_Store_PP
+group by sbl_member_ID,STORE_NAME  ;
+quit;
+
+
+/**Other Store**/
+proc sql;
+create table DH.EP_Other_Store_TY (compress = yes) as
+select a.*
+from DH.Other_TY_TYPE as a
+where TYPE = 'Other Store'
+group by sbl_member_ID,TYPE,store_id,store_format,STORE_NAME  ;
+quit;
+
+proc sql;
+create table DH.EP_Other_Store_PP (compress = yes) as
+select a.*
+from DH.Other_PP_TYPE as a
+where TYPE = 'Other Store'
+group by sbl_member_ID,TYPE,store_id,store_format,STORE_NAME  ;
+quit;
+
+
+proc sql;
+create table DH.EP_Other_Store_TY_END (compress = yes) as
+select distinct sbl_member_ID, sum (Tx_TY) as Tx_TY_OT, Sum(total_TY) as total_TY_OT, 
+sum(gp_TY)/sum(net_total_TY) as gp_per_TY_OT, Sum(total_TY)/sum (Tx_TY) as Basket_size_TY_OT
+from DH.EP_Other_Store_TY
+group by sbl_member_ID  ;
+quit;
+
+proc sql;
+create table DH.EP_Other_Store_PP_END (compress = yes) as
+select distinct sbl_member_ID, sum (Tx_PP) as Tx_PP_OT, Sum(total_PP) as total_PP_OT, 
+sum(gp_PP)/sum(net_total_PP) as gp_per_PP_OT, Sum(total_PP)/sum (Tx_PP) as Basket_size_PP_OT
+from DH.EP_Other_Store_PP
+group by sbl_member_ID ;
+quit;
+
+
+/**Total Store**/
+proc sql;
+create table DH.EP_Total_Store_TY_END (compress = yes) as
+select distinct sbl_member_ID, sum (Tx_TY) as Tx_TY_TT, Sum(total_TY) as total_TY_TT, 
+sum(gp_TY)/sum(net_total_TY) as gp_per_TY_TT, Sum(total_TY)/sum (Tx_TY) as Basket_size_TY_TT
+from DH.All_TY_3
+group by sbl_member_ID  ;
+quit;
+
+proc sql;
+create table DH.EP_Total_Store_PP_END (compress = yes) as
+select distinct sbl_member_ID, sum (Tx_PP) as Tx_PP_TT, Sum(total_PP) as total_PP_TT, 
+sum(gp_PP)/sum(net_total_PP) as gp_per_PP_TT, Sum(total_PP)/sum (Tx_PP) as Basket_size_PP_TT
+from DH.All_PP_3
+group by sbl_member_ID ;
+quit;
+
+
+
+
+/**Normal_Code**/
+/**Flag By Customer**/
+
+proc sort data = DH.Eli_TY_2;
+by sbl_member_ID
+;
+run;
+
+
+proc sort data = DH.Eli_PP_2;
+by sbl_member_ID
+;
+run;
+
+
+/*Flag TY vs PP*/
+data DH.Eli_TY_PP;
+merge 
+DH.Eli_TY_2
+DH.Eli_PP_2
+;
+by sbl_member_ID ;
+run;
+
+
+data DH.Eli_TY_PP_F (compress = yes) ;
+set DH.Eli_TY_PP ;
+if Total_PP = '' then FLAG = 'NEW';
+else if Total_PP ^= '' then FLAG = 'EXS';
+where Total_TY is not null
+;
+run;
+
+
+
+/*Flag PP vs TY */
+/*Loss Customer */ 
+data DH.Eli_PP_TY ;
+merge
+DH.Eli_PP_2
+DH.Eli_TY_2
+;
+by sbl_member_ID
+;
+run;
+
+
+data DH.Eli_PP_TY_F_LOST (compress = yes) ;
+set DH.Eli_PP_TY ;
+where Total_TY is null;
+FLAG = 'LOS'
+;
+run;
+
+
+/**Customer New...+ Loss*/
+data DH.Eli_PP_TY_F_LOST_END ;
+set 
+DH.Eli_TY_PP_F  
+DH.Eli_PP_TY_F_LOST
+;
+run;
+
+
+
+/*Output Table1*/
+proc sql;
+create table DH.Eli_PP_TY_F_LOST_END3 (compress = yes) as
+select FLAG, count(distinct sbl_member_id) as T1C, 
+sum (Tx_PP) as TX_PP,sum(gp_PP) as gp_PP,sum(net_total_PP) as net_total_PP, sum(Total_PP) as Totals_PP,
+sum (Tx_TY) as TX_TY, sum(gp_TY) as gp_TY,sum(net_total_TY) as net_total_TY,sum(Total_TY) as Totals_TY
+from DH.Eli_PP_TY_F_LOST_END
+group by FLAG
+;
+quit;
+
+
+
+
+
+/**Flag Customer Type**
+/**lost Customer**/
+proc sql;
+create table DH.EP_LOST (compress = yes) as
+select distinct sbl_member_ID,FLAG
+from DH.Eli_PP_TY_F_LOST
+where FLAG = 'LOS'
+group by sbl_member_ID,FLAG ;
+quit;
+
+proc sql;
+create table DH.EP_LOST_TYPE  (compress = yes) as
+select  a.*,b.sbl_member_ID as ID
+from DH.EP_LOST as a left join DH.Other_TY_TYPE_T1C_  as b
+on a.sbl_member_ID = b.sbl_member_ID
+group by a.sbl_member_ID ;
+quit;
+
+data DH.EP_LOST_TYPE_  (compress = yes) ;
+set DH.EP_LOST_TYPE ;
+if ID = '' then TYPE = 'Lost_Company';
+else if ID ^= '' then TYPE = 'Lost_Store';
+where sbl_member_ID is not null
+;
+run;
+
+
+proc sql;
+create table DH.EP_LOST_TYPE_END  (compress = yes) as
+select distinct sbl_member_ID,TYPE
+from DH.EP_LOST_TYPE_
+where sbl_member_ID is not null
+group by sbl_member_ID,TYPE ;
+quit;
+
+/**Eligible Customer**/
+proc sql;
+create table DH.EP_Eli_TY_2_END (compress = yes) as
+select distinct sbl_member_ID, sum (Tx_TY) as Tx_TY, Sum(total_TY) as total_TY, 
+sum(gp_TY)/sum(net_total_TY) as gp_per_TY, Sum(total_TY)/sum (Tx_TY) as Basket_size_TY
+from DH.Eli_TY_2
+group by sbl_member_ID  ;
+quit;
+
+proc sql;
+create table DH.EP_Eli_PP_2_END (compress = yes) as
+select distinct sbl_member_ID, sum (Tx_PP) as Tx_PP, Sum(total_PP) as total_PP, 
+sum(gp_PP)/sum(net_total_PP) as gp_per_PP, Sum(total_PP)/sum (Tx_PP) as Basket_size_PP
+from DH.Eli_PP_2
+group by sbl_member_ID ;
+quit;
+
+/**Flag Summary Sales Lost Customer**/
+/** Sales Lost Store_Company**/
+proc sql;
+create table DH.EP_LOST_Sale_ALL (compress = yes) as
+select  a.*,Tx_PP,total_PP,gp_PP,net_total_PP
+from DH.Ep_lost_type_end as a left join DH.Eli_pp_2 as b
+on a.sbl_member_ID = b.sbl_member_ID
+group by a.sbl_member_ID ;
+quit;
+
+proc sql;
+create table DH.EP_LOST_Sale_ALL_END (compress = yes) as
+select TYPE, count(distinct sbl_member_ID) as T1C,sum (Tx_PP) as Tx_PP,sum(gp_PP) as gp_PP,sum(Total_PP) as Totals_PP,
+sum(gp_PP)/sum(net_total_PP) as gp_per_PP,Sum(total_PP)/sum (Tx_PP) as Basket_size_PP,
+sum(Total_PP)/count(distinct sbl_member_ID) as SalesPerCard, sum (Tx_PP)/count(distinct sbl_member_ID) as Frequency
+from DH.EP_LOST_Sale_ALL
+group by TYPE ;
+quit;
+/** Sales Lost Total **/
+proc sql;
+create table DH.EP_LOST_Sale_Total_END (compress = yes) as
+select 'TOTAL ' as TYPE , count(distinct sbl_member_ID) as T1C,sum (Tx_PP) as Tx_PP,sum(gp_PP) as gp_PP,sum(Total_PP) as Totals_PP,
+sum(gp_PP)/sum(net_total_PP) as gp_per_PP,Sum(total_PP)/sum (Tx_PP) as Basket_size_PP,
+sum(Total_PP)/count(distinct sbl_member_ID) as SalesPerCard, sum (Tx_PP)/count(distinct sbl_member_ID) as Frequency
+from DH.EP_LOST_Sale_ALL
+;
+quit;
+/*Append*/
+data DH.EP_LOST_Sale_Total_All ;
+set  
+DH.EP_LOST_Sale_ALL_END
+DH.EP_LOST_Sale_Total_END
+;
+run;
+
+/*Output Table2*/
+
+/*Transpose table*/
+proc transpose data= DH.EP_LOST_Sale_Total_All out= DH.EXP_lost_Sale;
+id TYPE  ; 
+run;
+
+
+
+
+
+
+/*20 Most Store Lost visit to*/
+proc sql ;
+create table DH.Ep_lost_type_end_lost_store  as
+select a.*
+from DH.Ep_lost_type_end as a
+where TYPE = 'Lost_Store'
+group by sbl_member_ID
+;
+quit;
+
+proc sql ;
+create table DH.Ep_lost_type_end_lost_store_  as
+select a.sbl_member_ID, store_id ,store_name,
+sum (Tx_TY) as Tx_TY,sum(gp_TY) as gp_TY, Sum(total_TY) as total_TY,sum(net_total_TY) as net_total_TY,
+sum(gp_TY)/sum(net_total_TY) as gp_per_TY, Sum(total_TY)/sum (Tx_TY) as Basket_size_TY
+from DH.Ep_lost_type_end_lost_store as a left join DH.Other_ty as b
+on a.sbl_member_ID = b.sbl_member_ID
+group by a.sbl_member_ID,store_id,store_name
+;
+quit;
+
+proc sql ;
+create table DH.EXP_Lost_Visit  as
+select store_id,store_name,
+count(distinct sbl_member_ID) as Customer,
+sum (Tx_TY) as Tx_TY,sum(gp_TY) as gp_TY, Sum(total_TY) as total_TY,
+sum(gp_TY)/sum(net_total_TY) as gp_per_TY, Sum(total_TY)/sum (Tx_TY) as Basket_size_TY,
+sum(Total_TY)/count(distinct sbl_member_ID) as SalesPerCard,sum (Tx_TY)/count(distinct sbl_member_ID) as Frequency
+from DH.Ep_lost_type_end_lost_store_ 
+group by store_id, store_name 
+order by (Calculated Customer) desc
+;
+quit;
+
+/*Output table3*/
+
+proc sql outobs=20;
+create table DH.EXP_Lost_Visit  as
+select store_id,store_name,
+count(distinct sbl_member_ID) as Customer,
+sum (Tx_TY) as Tx_TY,sum(gp_TY) as gp_TY, Sum(total_TY) as total_TY,
+sum(gp_TY)/sum(net_total_TY) as gp_per_TY, Sum(total_TY)/sum (Tx_TY) as Basket_size_TY,
+sum(Total_TY)/count(distinct sbl_member_ID) as SalesPerCard,sum (Tx_TY)/count(distinct sbl_member_ID) as Frequency
+from DH.Ep_lost_type_end_lost_store_ 
+group by store_id, store_name 
+order by (Calculated Customer) desc
+;
+quit;
+
+
+/**Lost Visit_all Store**/
+proc sql ;
+create table DH.EXP_Lost_Visit_all  as
+select store_id,store_name, 
+count(distinct sbl_member_ID) as Customer,
+sum (Tx_TY) as Tx_TY,sum(gp_TY) as gp_TY, Sum(total_TY) as total_TY,
+sum(gp_TY)/sum(net_total_TY) as gp_per_TY, Sum(total_TY)/sum (Tx_TY) as Basket_size_TY,
+sum(Total_TY)/count(distinct sbl_member_ID) as SalesPerCard,sum (Tx_TY)/count(distinct sbl_member_ID) as Frequency
+from DH.Ep_lost_type_end_lost_store_ 
+group by store_id, store_name 
+order by (Calculated Customer) desc
+;
+quit;
+
+
+proc sql ;
+create table DH.EXP_Lost_Visit_all_2  as
+select count(distinct sbl_member_ID) as Customer,
+sum (Tx_TY) as Tx_TY,Sum(total_TY) as total_TY
+
+/*sum(gp_TY) as gp_TY,*/
+/*sum(gp_TY)/sum(net_total_TY) as gp_per_TY, Sum(total_TY)/sum (Tx_TY) as Basket_size_TY,*/
+/*sum(Total_TY)/count(distinct T1C_CUSTOMER_ID) as SalesPerCard,sum (Tx_TY)/count(distinct T1C_CUSTOMER_ID) as Frequency*/
+
+from DH.Ep_lost_type_end_lost_store_ 
+;
+quit;
+
+
+
+
+
+/**Exising Customer**/
+proc sql;
+create table DH.EP_Exising  (compress = yes) as
+select distinct sbl_member_ID,FLAG
+from DH.Eli_TY_PP_F 
+where FLAG = 'EXS'
+group by sbl_member_ID,FLAG ;
+quit;
+
+proc sql;
+create table DH.EP_Exising_TYPE  (compress = yes) as
+select  a.*,b.sbl_member_ID as ID
+from DH.EP_Exising  as a left join DH.Other_TY_TYPE_T1C_ as b
+on a.sbl_member_ID = b.sbl_member_ID
+group by a.sbl_member_ID ;
+quit;
+
+proc sql;
+create table DH.EP_Exising_TYPE_ (compress = yes) as 
+select *,
+case when sbl_member_ID not in (select sbl_member_ID from DH.Other_TY_TYPE_T1C_) 
+and sbl_member_ID not in (select sbl_member_ID from DH.Other_PP_TYPE_T1C_) 
+then 'Single Store' else 'Multi Store' end as TYPE
+from DH.EP_Exising_TYPE ;
+quit; 
+
+proc sql;
+create table DH.EP_Exising_TYPE_END  (compress = yes) as
+select distinct sbl_member_ID,TYPE
+from DH.EP_Exising_TYPE_
+where sbl_member_ID is not null
+group by sbl_member_ID,TYPE ;
+quit;
+
+/**New Customer**/
+proc sql;
+create table DH.EP_NEW (compress = yes) as
+select distinct sbl_member_ID,FLAG
+from DH.Eli_TY_PP_F 
+where FLAG = 'NEW'
+group by sbl_member_ID,FLAG ;
+quit;
+
+proc sql;
+create table DH.EP_NEW_TYPE  (compress = yes) as
+select  a.*,b.sbl_member_ID as ID
+from DH.EP_NEW  as a left join DH.Other_pp_TYPE_T1C_  as b
+on a.sbl_member_ID = b.sbl_member_ID
+group by a.sbl_member_ID ;
+quit;
+
+data DH.EP_NEW_TYPE_  (compress = yes) ;
+set DH.EP_NEW_TYPE ;
+if ID = '' then TYPE = 'NEW_Company';
+else if ID ^= '' then TYPE = 'NEW_Store';
+where sbl_member_ID is not null
+;
+run;
+
+proc sql;
+create table DH.EP_NEW_TYPE_END  (compress = yes) as
+select distinct sbl_member_ID,TYPE
+from DH.EP_NEW_TYPE_
+where sbl_member_ID is not null
+group by sbl_member_ID,TYPE ;
+quit;
+
+/***NEW Customer**/
+/**Flag Summary Sales NEW Customer**/
+/** Sales NEW Store_Company**/
+proc sql;
+create table DH.EP_NEW_Sale_ALL (compress = yes) as
+select  a.*,Tx_TY,total_TY,gp_TY,net_total_TY
+from DH.Ep_NEW_type_end as a left join DH.Eli_TY_2 as b
+on a.sbl_member_ID = b.sbl_member_ID
+group by a.sbl_member_ID ;
+quit;
+
+proc sql;
+create table DH.EP_NEW_Sale_ALL_END (compress = yes) as
+select TYPE, count(distinct sbl_member_ID) as T1C,sum (Tx_TY) as Tx_TY,sum(gp_TY) as gp_TY,sum(Total_TY) as Totals_TY,
+sum(gp_TY)/sum(net_total_TY) as gp_per_TY,Sum(total_TY)/sum (Tx_TY) as Basket_size_TY,
+sum(Total_TY)/count(distinct sbl_member_ID) as SalesPerCard, sum (Tx_TY)/count(distinct sbl_member_ID) as Frequency
+from DH.EP_NEW_Sale_ALL
+group by TYPE ;
+quit;
+
+
+/** Sales NEW Total **/
+proc sql;
+create table DH.EP_NEW_Sale_Total_END (compress = yes) as
+select 'TOTAL ' as TYPE , count(distinct sbl_member_ID) as T1C,sum (Tx_TY) as Tx_TY,sum(gp_TY) as gp_TY,sum(Total_TY) as Totals_TY,
+sum(gp_TY)/sum(net_total_TY) as gp_per_TY,Sum(total_TY)/sum (Tx_TY) as Basket_size_TY,
+sum(Total_TY)/count(distinct sbl_member_ID) as SalesPerCard, sum (Tx_TY)/count(distinct sbl_member_ID) as Frequency
+from DH.EP_NEW_Sale_ALL
+;
+quit;
+/*Append*/
+data DH.EP_NEW_Sale_Total_All ;
+set  
+DH.EP_NEW_Sale_ALL_END
+DH.EP_NEW_Sale_Total_END
+;
+run;
+
+/*Output Table4*/
+
+/*Transpose table*/
+proc transpose data=DH.EP_NEW_Sale_Total_All out=DH.EXP_NEW_Sale;
+id TYPE  ; 
+run;
+/***END NEW Customer**/
+
+
+
+
+
+/**Final Existing customer**/
+proc sql threads;
+create table DH.EXP_EXIS_All as
+select *
+from DH.EP_Exising_TYPE_END as a
+left join DH.EP_Eli_TY_2_END b on a.sbl_member_id = b.sbl_member_id
+left join DH.EP_Second_Store_TY_END c on a.sbl_member_id = c.sbl_member_id
+left join DH.EP_Other_Store_TY_END d on  a.sbl_member_id = d.sbl_member_id
+left join DH.EP_Total_Store_TY_END e on  a.sbl_member_id = e.sbl_member_id
+
+left join DH.EP_Eli_PP_2_END f on a.sbl_member_id = f.sbl_member_id
+left join DH.EP_Second_Store_PP_END g on a.sbl_member_id = g.sbl_member_id
+left join DH.EP_Other_Store_PP_END h on  a.sbl_member_id = h.sbl_member_id
+left join DH.EP_Total_Store_PP_END i on  a.sbl_member_id = i.sbl_member_id;
+quit;
+
+
+
+
+/**Final lost customer**/
+proc sql threads;
+create table DH.EXP_LOST_All as
+select *
+from DH.EP_LOST_TYPE_END as a
+left join DH.EP_Eli_TY_2_END b on a.sbl_member_id = b.sbl_member_id
+left join DH.EP_Second_Store_TY_END c on a.sbl_member_id = c.sbl_member_id
+left join DH.EP_Other_Store_TY_END d on  a.sbl_member_id = d.sbl_member_id
+left join DH.EP_Total_Store_TY_END e on  a.sbl_member_id = e.sbl_member_id
+
+left join DH.EP_Eli_PP_2_END f on a.sbl_member_id = f.sbl_member_id
+left join DH.EP_Second_Store_PP_END g on a.sbl_member_id = g.sbl_member_id
+left join DH.EP_Other_Store_PP_END h on  a.sbl_member_id = h.sbl_member_id
+left join DH.EP_Total_Store_PP_END i on  a.sbl_member_id = i.sbl_member_id;
+quit;
+
+
+
+
+/**Final New customer**/
+proc sql threads;
+create table DH.EXP_New_All as
+select *
+from DH.EP_New_TYPE_END as a
+left join DH.EP_Eli_TY_2_END b on a.sbl_member_id = b.sbl_member_id
+left join DH.EP_Second_Store_TY_END c on a.sbl_member_id = c.sbl_member_id
+left join DH.EP_Other_Store_TY_END d on  a.sbl_member_id = d.sbl_member_id
+left join DH.EP_Total_Store_TY_END e on  a.sbl_member_id = e.sbl_member_id
+
+left join DH.EP_Eli_PP_2_END f on a.sbl_member_id = f.sbl_member_id
+left join DH.EP_Second_Store_PP_END g on a.sbl_member_id = g.sbl_member_id
+left join DH.EP_Other_Store_PP_END h on  a.sbl_member_id = h.sbl_member_id
+left join DH.EP_Total_Store_PP_END i on  a.sbl_member_id = i.sbl_member_id;
+quit;
+
