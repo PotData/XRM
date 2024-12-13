@@ -1,0 +1,396 @@
+
+/*Moneyback Campaign Performances Bi-Weekly*/
+
+options dlcreatedir;
+libname MT ' G:\Ton\MoneyBack_SupplierPoint_w2932';
+
+
+/*import Money Back Product master*/
+
+
+
+
+proc sql;
+	create table MT.moneyback_product as
+	select distinct a.*, Product_eng_Desc, BRAND_ENG_NAME as brand, SUBDEPT_ENG_DESC
+	from MT.moneyback_product_master as a
+	left join topsrst.d_merchandise as b
+	on a.pr_code = b.product_code
+	where wk in ('WK2429/32')
+	;
+quit;
+
+/*Sales*/
+proc sql;
+	create table MT.sale_mem_M04 as
+	select 202404 as month, trn_dte, sbl_member_id, ref_key, store_id, pr_code, total, net_total, gp, qty
+	from Topst1c.SALES_PROMOTION_COMP_202404
+	where trn_dte between '20240417' and '20240430'
+				and pr_code in (select distinct pr_code from MT.moneyback_product)
+				and sbl_member_id not in ('9-014342304', '9-014223414',  '9-014511211', '9-014493473', '9-014234126', '9-014651449', '9999999999')
+				and sbl_member_id is not null
+	;
+quit;
+
+proc sql;
+	create table MT.sale_mem_M05 as
+	select 202405 as month, trn_dte, sbl_member_id, ref_key, store_id, pr_code, total, net_total, gp, qty
+	from Topst1c.SALES_PROMOTION_COMP_202405
+	where trn_dte between '20240501' and '20240531'
+				and pr_code in (select distinct pr_code from MT.moneyback_product)
+				and sbl_member_id not in ('9-014342304', '9-014223414',  '9-014511211', '9-014493473', '9-014234126', '9-014651449', '9999999999')
+				and sbl_member_id is not null
+	;
+quit;
+
+proc sql;
+	create table MT.sale_mem_M06 as
+	select 202406 as month, trn_dte, sbl_member_id, ref_key, store_id, pr_code, total, net_total, gp, qty
+	from Topst1c.SALES_PROMOTION_COMP_202406
+	where trn_dte between '20240601' and '20240630'
+				and pr_code in (select distinct pr_code from MT.moneyback_product)
+				and sbl_member_id not in ('9-014342304', '9-014223414',  '9-014511211', '9-014493473', '9-014234126', '9-014651449', '9999999999')
+				and sbl_member_id is not null
+	;
+quit;
+
+proc sql;
+	create table MT.sale_mem_M07 as
+	select 202407 as month, trn_dte, sbl_member_id, ref_key, store_id, pr_code, total, net_total, gp, qty
+	from Topst1c.SALES_PROMOTION_COMP_202407
+	where trn_dte between '20240701' and '20240731'
+				and pr_code in (select distinct pr_code from MT.moneyback_product)
+				and sbl_member_id not in ('9-014342304', '9-014223414',  '9-014511211', '9-014493473', '9-014234126', '9-014651449', '9999999999')
+				and sbl_member_id is not null
+	;
+quit;
+
+proc sql;
+	create table MT.sale_mem_M08 as
+	select 202408 as month, trn_dte, sbl_member_id, ref_key, store_id, pr_code, total, net_total, gp, qty
+	from Topst1c.SALES_PROMOTION_COMP_202408
+	where trn_dte between '20240801' and '20240806'
+				and pr_code in (select distinct pr_code from MT.moneyback_product)
+				and sbl_member_id not in ('9-014342304', '9-014223414',  '9-014511211', '9-014493473', '9-014234126', '9-014651449', '9999999999')
+				and sbl_member_id is not null
+	;
+quit;
+
+
+data MT.sale_mem (compress= yes);
+	set 
+		MT.sale_mem_M04
+		MT.sale_mem_M05
+		MT.sale_mem_M06
+		MT.sale_mem_M07
+		MT.sale_mem_M08
+;
+run;
+
+
+
+
+
+
+/*mapping member*/
+/*proc sql;*/
+/*	create table MT.sale_mem as*/
+/*	select distinct L.*, R.sbl_member_id*/
+/*	from MT.sale  as L*/
+/*	LEFT JOIN topssbl.sbl_member_card_list as R*/
+/*	on L.t1c_card_no = R.t1c_card_no*/
+/*	where L.t1c_card_no is not null*/
+/*				and R.sbl_member_id not in ('9-014342304', '9-014223414',  '9-014511211', '9-014493473', '9-014234126', '9-014651449', '9999999999')*/
+/*				and R.sbl_member_id is not null*/
+/*	;*/
+/*quit;*/
+
+
+/*Flag period column*/
+PROC SQL ;
+create table MT.sale_mem_p as
+	select distinct sbl_member_id, month, ref_key, store_id, cond_id, a.pr_code, Product_eng_Desc, brand, SUBDEPT_ENG_DESC, detail,
+				total, gp, net_total, trn_dte, qty,
+				case when trn_dte between period_start and period_end then wk
+						when trn_dte between previous_start and previous_end then wk
+						end as id,
+				case when trn_dte between period_start and period_end then 'Period'
+						when trn_dte between previous_start and previous_end then 'Previous' 
+						end as period
+	from MT.sale_mem as a 
+	left join MT.moneyback_product as b
+	on a.pr_code = b.pr_code
+	having ID  not is null
+	;
+QUIT;
+
+
+/*summary by pr_code*/
+proc sql;
+	create table MT._01_prd as 
+	select distinct id,  period, cond_id, pr_code, Product_eng_Desc, brand, SUBDEPT_ENG_DESC,
+				count(distinct trn_dte) as no_day,
+				count(distinct sbl_member_id) as tc,
+				count(distinct ref_key) as tx,
+				sum(total) as total,
+				sum(net_total) as net_total,
+				sum(gp) as gp,
+				sum(qty) as qty
+	from MT.sale_mem_p
+	group by id, period, cond_id, pr_code, Product_eng_Desc, brand, SUBDEPT_ENG_DESC
+	;
+quit;
+
+proc sql;
+	insert into MT._01_prd
+	select distinct id, 
+				period,
+				0  as cond_id, 
+				"total"  as pr_code, 
+				"total"  as Product_eng_Desc, 
+				"total"  as brand, 
+				"total"  as SUBDEPT_ENG_DESC,
+				count(distinct trn_dte) as no_day,
+				count(distinct sbl_member_id) as tc,
+				count(distinct ref_key) as tx,
+				sum(total) as total,
+				sum(net_total) as net_total,
+				sum(gp) as gp,
+				sum(qty) as qty
+	from MT.sale_mem_p
+	group by id, period
+	;
+quit;
+
+/*summary by cond_id*/
+proc sql;
+	create table MT._02_conid as 
+	select distinct id, period, cond_id, detail, brand, SUBDEPT_ENG_DESC,
+				count(distinct trn_dte) as no_day,
+				count(distinct sbl_member_id) as tc,
+				count(distinct ref_key) as tx,
+				sum(total) as total,
+				sum(net_total) as net_total,
+				sum(gp) as gp,
+				sum(qty) as qty
+	from MT.sale_mem_p
+	group by id, period, cond_id, detail, brand, SUBDEPT_ENG_DESC
+	;
+quit;
+
+proc sql;
+	insert into MT._02_conid
+	select distinct id, 
+				period, 
+				0  as cond_id, 
+				"total" as detail,
+				"total"  as brand, 
+				"total"  as SUBDEPT_ENG_DESC,
+				count(distinct trn_dte) as no_day,
+				count(distinct sbl_member_id) as tc,
+				count(distinct ref_key) as tx,
+				sum(total) as total,
+				sum(net_total) as net_total,
+				sum(gp) as gp,
+				sum(qty) as qty
+	from MT.sale_mem_p
+	group by id, period
+	;
+quit;
+
+
+
+/*Earn Point*/
+proc sql;
+	create table MT.earn as
+	select distinct t1c_card_no, store_id, ref_no, cond_id, trans_date, t1c_point
+	from topsrst.t1c_point_trans as a
+	where cond_id in (select distinct cond_id from MT.moneyback_product)
+	;
+quit;
+
+proc sql;
+	create table MT.earn_mem as
+	select distinct L.*, R.sbl_member_id
+	from MT.earn as L
+	LEFT JOIN topssbl.sbl_member_card_list as R
+	on L.t1c_card_no = R.t1c_card_no
+	where L.t1c_card_no is not null
+				and R.sbl_member_id not in ('9-014342304', '9-014223414',  '9-014511211', '9-014493473', '9-014234126', '9-014651449', '9999999999')
+				and R.sbl_member_id is not null
+	;
+quit;
+
+proc sql;
+	create table MT.earn_mem_p as
+	select distinct a.cond_id, sbl_member_id, store_id, ref_no, t1c_point, detail, brand, SUBDEPT_ENG_DESC, trans_date, 
+						case when trans_date between period_start and period_end then wk end as id,
+						b.point, b.period, b.previous,
+						count(distinct pr_code) as no_sku
+	from MT.earn_mem as a
+	left join MT.moneyback_product as b
+	on a.cond_id = b.cond_id
+	group by a.cond_id, sbl_member_id, store_id, ref_no, t1c_point, detail, brand, SUBDEPT_ENG_DESC, trans_date, b.point, b.period, b.previous
+	having id is not null
+	;
+quit;
+
+proc sql;
+	create table MT._03_earn as
+	select distinct a.id, "Earn point" as period, a.cond_id, a.detail, a.brand, a.SUBDEPT_ENG_DESC,
+				max(a.period) as period_date,
+				max(a.previous) as previous_date,
+				max(a.no_sku) as no_sku,
+				1 as no_items,
+				count(distinct a.trans_date) as no_day,
+				count(distinct a.sbl_member_id) as tc,
+				count(distinct a.ref_no) as tx,
+				sum(a.t1c_point) as t1c_point,
+				max(b.point) as point
+	from MT.earn_mem_p as a
+	left join (select distinct cond_id, point from MT.moneyback_product) as b
+	on a.cond_id = b.cond_id
+	group by a.id, a.cond_id, a.detail, a.brand, a.SUBDEPT_ENG_DESC
+	;
+quit;
+
+proc sql;
+	insert into MT._03_earn 
+	select distinct a.id, "Earn point" as period, 
+				0 as cond_id, 
+				"total" as detail, 
+				"total" as brand, 
+				"total" as SUBDEPT_ENG_DESC,
+				max(a.period) as period_date,
+				max(a.previous) as previous_date,
+				0 as no_sku,
+				count(distinct b.cond_id) as no_item,
+				count(distinct a.trans_date) as no_day,
+				count(distinct a.sbl_member_id) as tc,
+				count(distinct a.ref_no) as tx,
+				sum(a.t1c_point) as t1c_point,
+				0 as point
+	from MT.earn_mem_p as a
+	left join (select distinct cond_id, count(distinct pr_code) as no_sku from MT.moneyback_product group by cond_id) as b
+	on a.cond_id = b.cond_id
+	group by id
+	;
+quit;
+
+
+/*Combine period, previous, earnpoint*/
+data MT._04_result;
+set MT._03_earn
+MT._02_conid
+;
+run;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*Add Qty into Earn Point Tx*/
+/*Wk2532*/
+proc sql;
+	create table MT.earn_gtx as 
+	select distinct A.sbl_member_id, store_id, ref_no, cond_id, trans_date, t1c_point, catx("_", STORE_ID, REF_NO, TRANS_DATE) as ref_key
+	from MT.earn_mem_p as A
+	group by A.sbl_member_id, store_id, ref_no, cond_id, trans_date, t1c_point
+	;
+quit;
+
+
+proc sql;
+	create table MT._Earn_tx_sale as 
+	select A.*, t1c_point
+	from MT.sale_mem_p as A
+	join MT.EARN_GTX as B
+	on A.ref_key = B.ref_key
+	;
+quit;
+
+
+proc sql;
+	create table MT._Earn_tx_prd as 
+	select distinct id,  '01_Earn' as period, A.cond_id, pr_code, Product_eng_Desc, brand, SUBDEPT_ENG_DESC,
+				count(distinct trn_dte) as no_day,
+				count(distinct A.sbl_member_id) as tc,
+				count(distinct A.ref_key) as tx,
+				sum(total) as total,
+				sum(net_total) as net_total,
+				sum(gp) as gp,
+				sum(qty) as qty
+	from MT.sale_mem_p as A
+	join MT.EARN_GTX as B
+	on A.ref_key = B.ref_key
+	group by id, period, A.cond_id, pr_code, Product_eng_Desc, brand, SUBDEPT_ENG_DESC
+	;
+quit;
+
+proc sql;
+	create table MT._Earn_tx_condi as 
+	select distinct id,  '01_Earn' as period, A.cond_id, brand, SUBDEPT_ENG_DESC,
+				count(distinct trn_dte) as no_day,
+				count(distinct A.sbl_member_id) as tc,
+				count(distinct A.ref_key) as tx,
+				sum(total) as total,
+				sum(net_total) as net_total,
+				sum(gp) as gp,
+				sum(qty) as qty
+	from MT.sale_mem_p as A
+	join MT.EARN_GTX as B
+	on A.ref_key = B.ref_key
+	group by id, period, A.cond_id, brand, SUBDEPT_ENG_DESC
+	;
+quit;
+
+
+
+
+proc sql;
+	insert into MT._Earn_tx_prd
+	select distinct id, 
+				period,
+				0  as cond_id, 
+				"total"  as pr_code, 
+				"total"  as Product_eng_Desc, 
+				"total"  as brand, 
+				"total"  as SUBDEPT_ENG_DESC,
+				count(distinct trn_dte) as no_day,
+				count(distinct sbl_member_id) as tc,
+				count(distinct ref_key) as tx,
+				sum(total) as total,
+				sum(net_total) as net_total,
+				sum(gp) as gp,
+				sum(qty) as qty
+	from MT.sale_mem_p
+	group by id, period
+	;
+quit;
+
+
+
+/*Cal qty*/
+proc sql;
+	create table MT.earn_mem_p_q as 
+	select A.*, t1c_point/point as Qty
+	from MT.earn_mem_p as A
+	;
+quit;
+
+proc sql;
+	create table MT.earn_gtx as 
+	select distinct cond_id, sum(qty) as qty
+	from MT.earn_mem_p_q as A
+	group by cond_id
+	;
+quit;
